@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Smart Shopper">
+<meta name="theme-color" content="#07111a">
+<title>Smart Shopper — Voice DE/CH/FR</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07111a;--card:rgba(255,255,255,0.05);--border:rgba(255,255,255,0.09);
+  --green:#10b981;--blue:#3b82f6;--red:#ef4444;--orange:#f59e0b;
+  --text:#dde8f0;--muted:#4a7a8a;--soft:#8aaabb;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding-bottom:80px}
+.header{background:rgba(16,185,129,0.07);border-bottom:1px solid rgba(16,185,129,0.15);padding:14px 18px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+.header h1{font-size:16px;font-weight:700}
+.header p{font-size:10px;color:var(--muted)}
+.progress{height:3px;background:rgba(255,255,255,0.05)}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--green),var(--blue));transition:width 0.4s}
+.container{max-width:680px;margin:0 auto;padding:0 14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:13px}
+input,button{font-family:inherit}
+.btn-green{background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:10px 20px;cursor:pointer;font-weight:700;font-size:14px}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--soft);border-radius:9px;padding:8px 14px;cursor:pointer;font-size:12px}
+.tag{display:inline-flex;align-items:center;gap:4px;background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.28);border-radius:7px;padding:4px 9px;font-size:11px;color:var(--green)}
+.step{display:none;padding-top:22px}
+.step.active{display:block}
+.quick-cities{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.city-btn{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;color:var(--muted);padding:3px 10px;cursor:pointer;font-size:11px}
+.city-btn:hover{border-color:var(--green);color:var(--green)}
+.voice-card{border-radius:13px;padding:14px;margin-bottom:12px;transition:all 0.3s;border:1px solid var(--border);background:rgba(255,255,255,0.02)}
+.voice-card.listening{border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.06)}
+.voice-card.done{border-color:rgba(16,185,129,0.35);background:rgba(16,185,129,0.05)}
+.mic-btn{display:flex;align-items:center;gap:7px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#f87171;border-radius:10px;padding:10px 18px;cursor:pointer;font-size:14px;font-weight:700;transition:all 0.2s}
+.mic-btn.listening{background:rgba(239,68,68,0.3);border-color:rgba(239,68,68,0.6)}
+.lang-btn{background:rgba(255,255,255,0.07);border:1px solid var(--border);color:var(--soft);border-radius:8px;padding:7px 12px;cursor:pointer;font-size:12px;font-weight:700}
+.transcript{background:rgba(255,255,255,0.04);border-radius:8px;padding:8px 12px;font-size:13px;color:#a0c8d8;font-style:italic;margin:8px 0}
+.matched-grid{display:flex;flex-wrap:wrap;gap:5px;margin:8px 0}
+.cat-btn{width:100%;display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:12px;color:var(--text);padding:11px 14px;cursor:pointer;font-size:13px;font-weight:600;text-align:left}
+.sub-btn{width:100%;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:9px;color:#7a9aaa;padding:7px 12px;cursor:pointer;font-size:12px;text-align:left;margin-bottom:3px}
+.prod-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:9px;padding:5px 10px;cursor:pointer;font-size:11px;color:#8aaabb;transition:all 0.15s;margin:2px}
+.prod-chip.sel{background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.35);color:var(--green);font-weight:700}
+.qty-ctrl{display:inline-flex;align-items:center;gap:2px;margin-left:4px}
+.qty-btn{background:none;border:none;color:#5a9a7a;cursor:pointer;font-size:15px;padding:0 3px;line-height:1}
+.qty-val{font-size:10px;color:var(--green);min-width:26px;text-align:center}
+.lbl-bio{font-size:9px;color:#22c55e}.lbl-vegan{font-size:9px;color:#a3e635}.lbl-gf{font-size:9px;color:#fb923c}.lbl-lf{font-size:9px;color:#38bdf8}
+.store-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:13px;padding:13px 14px;margin-bottom:8px;cursor:pointer;transition:all 0.2s}
+.store-card:hover,.store-card.sel{background:rgba(16,185,129,0.07);border-color:rgba(16,185,129,0.35)}
+.filter-btn{display:flex;align-items:center;gap:4px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;color:var(--muted);padding:5px 11px;cursor:pointer;font-size:11px;transition:all 0.15s}
+.filter-btn.active{border-color:var(--green);color:var(--green);background:rgba(16,185,129,0.1);font-weight:700}
+.sort-btn{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;color:#4a7a8a;padding:4px 11px;cursor:pointer;font-size:11px}
+.sort-btn.active{background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.35);color:var(--green);font-weight:700}
+.badge{background:var(--green);color:#fff;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:700}
+.ripple-wrap{position:relative;display:inline-block}
+@keyframes ripple{0%{transform:scale(0.8);opacity:1}100%{transform:scale(2.5);opacity:0}}
+.ripple{position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(239,68,68,0.5);animation:ripple 1.2s infinite}
+.divider{height:1px;background:rgba(255,255,255,0.06);margin:10px 0}
+.breakdown-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:8px}
+.permission-tip{background:rgba(251,146,60,0.08);border:1px solid rgba(251,146,60,0.25);border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#fb923c;line-height:1.6}
+.cross-border{background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div class="header">
+  <span style="font-size:22px">🛒</span>
+  <div style="flex:1">
+    <h1>Smart Shopper <span style="font-size:11px;color:var(--muted);font-weight:400">DE/CH/FR · Voice · Full Supermarket</span></h1>
+  </div>
+  <button class="btn-outline" onclick="restart()" id="restartBtn" style="display:none">↺</button>
+</div>
+<div class="progress"><div class="progress-bar" id="progressBar" style="width:10%"></div></div>
+<div class="container">
+<!-- STEP 1: ADDRESS -->
+<div class="step active" id="stepAddress">
+  <div style="text-align:center;padding:24px 0 18px">
+    <div style="font-size:32px;margin-bottom:8px">📍</div>
+    <h2 style="font-size:19px;margin-bottom:6px">Where are you shopping?</h2>
+    <p style="font-size:12px;color:var(--muted)">Enter your city — we find all stores within your radius including cross-border.</p>
+  </div>
+  <div id="savedLocCard" style="display:none;background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.25);border-radius:13px;padding:14px 17px;margin-bottom:14px">
+    <div style="font-size:10px;color:var(--green);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px">📍 Saved location</div>
+    <div id="savedLocName" style="font-size:17px;font-weight:700"></div>
+    <div id="savedLocCountry" style="font-size:12px;color:#4a8a9a;margin-bottom:11px"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-green" onclick="useSaved()" style="flex:1;padding:10px 0;font-size:13px">Use saved</button>
+      <button onclick="clearSaved()" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#f87171;border-radius:9px;padding:10px 13px;cursor:pointer">🗑</button>
+    </div>
+  </div>
+  <div class="card" style="padding:16px;margin-bottom:14px">
+    <p style="font-size:12px;color:var(--muted);margin-bottom:9px">City or address:</p>
+    <div style="display:flex;gap:8px">
+      <input id="addrInput" type="text" placeholder="Basel / Grenzach-Wyhlen / Freiburg..." onkeydown="if(event.key==='Enter')resolveAddr()" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:9px;color:var(--text);padding:10px 13px;font-size:13px;outline:none">
+      <button class="btn-green" onclick="resolveAddr()">Go</button>
+    </div>
+    <div id="geoErr" style="font-size:11px;color:#f87171;margin-top:6px;display:none"></div>
+    <div class="quick-cities">
+      <button class="city-btn" onclick="setCity('Grenzach-Wyhlen')">Grenzach-Wyhlen</button>
+      <button class="city-btn" onclick="setCity('Basel')">Basel</button>
+      <button class="city-btn" onclick="setCity('Freiburg')">Freiburg</button>
+      <button class="city-btn" onclick="setCity('Weil am Rhein')">Weil am Rhein</button>
+      <button class="city-btn" onclick="setCity('Loerrach')">Lörrach</button>
+      <button class="city-btn" onclick="setCity('Mulhouse')">Mulhouse</button>
+      <button class="city-btn" onclick="setCity('Saint-Louis')">Saint-Louis</button>
+      <button class="city-btn" onclick="setCity('Zurich')">Zurich</button>
+    </div>
+  </div>
+  <div class="card" style="padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <span style="font-size:13px;font-weight:600">Search radius</span>
+      <span id="radiusVal" style="font-size:20px;font-weight:800;color:var(--green)">20 km</span>
+    </div>
+    <input type="range" id="radiusSlider" min="2" max="80" value="20" oninput="document.getElementById('radiusVal').textContent=this.value+' km'" style="width:100%;accent-color:var(--green);cursor:pointer">
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px"><span>2</span><span>20</span><span>40</span><span>60</span><span>80 km</span></div>
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+      <button class="city-btn" onclick="setRadius(5)">5 km</button>
+      <button class="city-btn" onclick="setRadius(10)">10 km</button>
+      <button class="city-btn" onclick="setRadius(20)">20 km</button>
+      <button class="city-btn" onclick="setRadius(30)">30 km</button>
+      <button class="city-btn" onclick="setRadius(50)">50 km</button>
+    </div>
+  </div>
+</div>
+
+<!-- STEP 2: BASKET -->
+<div class="step" id="stepBasket">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0 10px;flex-wrap:wrap;gap:8px">
+    <div>
+      <span style="font-size:16px;font-weight:700">Shopping List</span>
+      <span id="locLabel" style="font-size:11px;color:var(--muted);margin-left:8px"></span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span id="itemCount" class="badge" style="display:none">0</span>
+      <button onclick="saveLoc()" style="background:none;border:none;color:#2a8a6a;cursor:pointer;font-size:11px;text-decoration:underline">save location</button>
+    </div>
+  </div>
+
+  <!-- VOICE CARD -->
+  <div class="voice-card" id="voiceCard">
+    <div id="permissionTip" class="permission-tip" style="display:none"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div>
+        <div id="voiceTitle" style="font-size:13px;font-weight:700;color:#8aaabb">🎙 Voice / Text input</div>
+        <div id="voiceSubtitle" style="font-size:10px;color:var(--muted);margin-top:2px">Say items in German or English — Milch, Kartoffeln, Lachs</div>
+      </div>
+      <div style="display:flex;gap:7px;align-items:center">
+        <button class="lang-btn" id="langBtn" onclick="toggleLang()">DE</button>
+        <div class="ripple-wrap" id="rippleWrap">
+          <button class="mic-btn" id="micBtn" onclick="toggleVoice()">
+            <span style="font-size:18px">🎙</span><span id="micBtnText">Start</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="transcriptBox" style="display:none" class="transcript"></div>
+    <div style="display:flex;gap:7px;margin-top:6px">
+      <input id="quickInput" type="text" placeholder="Or type: Milch, Eier, Brot, salmon..."
+        onkeydown="if(event.key==='Enter')processText()"
+        style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--text);padding:8px 12px;font-size:12px;outline:none">
+      <button onclick="processText()" style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:var(--green);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:12px;font-weight:700">Find</button>
+    </div>
+    <div id="matchedBox" style="display:none;margin-top:10px">
+      <div style="font-size:10px;color:var(--green);font-weight:700;margin-bottom:6px" id="matchCount"></div>
+      <div class="matched-grid" id="matchedGrid"></div>
+      <div style="display:flex;gap:7px;margin-top:6px">
+        <button onclick="addAllMatched()" class="btn-green" style="font-size:12px;padding:8px 16px">+ Add all to list</button>
+        <button onclick="clearVoice()" class="btn-outline" style="font-size:11px">clear</button>
+      </div>
+    </div>
+    <div id="noMatchBox" style="display:none;font-size:11px;color:#fb923c;margin-top:6px">No products matched. Try different words.</div>
+  </div>
+
+  <input id="searchInput" type="text" placeholder="Search products... (chicken, bio, gluten-free)"
+    oninput="renderCategories()"
+    style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.11);border-radius:9px;color:var(--text);padding:9px 13px;font-size:13px;outline:none;margin-bottom:10px">
+
+  <div style="display:flex;gap:7px;margin-bottom:11px;flex-wrap:wrap;align-items:center">
+    <span style="font-size:10px;color:var(--muted)">Filter:</span>
+    <button class="filter-btn" data-lbl="bio" onclick="toggleFilter('bio')">🌿 Bio</button>
+    <button class="filter-btn" data-lbl="vegan" onclick="toggleFilter('vegan')">🌱 Vegan</button>
+    <button class="filter-btn" data-lbl="gluten-free" onclick="toggleFilter('gluten-free')">🌾 GF</button>
+    <button class="filter-btn" data-lbl="lactose-free" onclick="toggleFilter('lactose-free')">🥛 LF</button>
+    <button onclick="clearFilters()" style="background:none;border:none;color:#3a6a7a;cursor:pointer;font-size:10px;text-decoration:underline;display:none" id="clearFiltersBtn">clear</button>
+  </div>
+
+  <div id="catTree"></div>
+
+  <div id="analyzeWrap" style="display:none;margin-top:16px">
+    <div style="display:flex;gap:7px;margin-bottom:11px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:11px;color:var(--muted)">Sort:</span>
+      <button class="sort-btn active" id="sortTotal" onclick="setSortBy('total')">💰 Cheapest</button>
+      <button class="sort-btn" id="sortSaving" onclick="setSortBy('saving')">🏷 Best offers</button>
+      <button class="sort-btn" id="sortDist" onclick="setSortBy('dist')">📍 Nearest</button>
+    </div>
+    <button class="btn-green" onclick="analyze()" style="width:100%;padding:14px 0;font-size:15px" id="analyzeBtn">Find Best Prices</button>
+  </div>
+</div>
+
+<!-- STEP 3: RESULTS -->
+<div class="step" id="stepResults">
+  <div id="resultsHeader" style="font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;padding:14px 0 9px"></div>
+  <div id="resultsList"></div>
+  <div style="font-size:10px;color:#1a5a6a;text-align:center;margin:8px 0">Prices: index baseline + weekly offers</div>
+  <button onclick="goBack()" style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);color:#5a8a9a;border-radius:11px;padding:12px;cursor:pointer;font-size:12px">← Edit list</button>
+</div>
+
+</div><!-- /container -->
+<script>
+var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+var PRODUCTS=[
+{id:"apple",name:"Apples",cat:"Produce",sub:"Fresh Fruit",unit:"kg",step:0.5,base:2.20,labels:[]},
+{id:"banana",name:"Bananas",cat:"Produce",sub:"Fresh Fruit",unit:"kg",step:0.5,base:1.60,labels:[]},
+{id:"orange",name:"Oranges",cat:"Produce",sub:"Fresh Fruit",unit:"kg",step:0.5,base:1.90,labels:[]},
+{id:"strawberry",name:"Strawberries",cat:"Produce",sub:"Fresh Fruit",unit:"250g",step:1,base:2.50,labels:[]},
+{id:"grape",name:"Grapes",cat:"Produce",sub:"Fresh Fruit",unit:"kg",step:0.5,base:3.20,labels:[]},
+{id:"lemon",name:"Lemons",cat:"Produce",sub:"Fresh Fruit",unit:"kg",step:0.5,base:2.10,labels:[]},
+{id:"pear",name:"Pears",cat:"Produce",sub:"Fresh Fruit",unit:"kg",step:0.5,base:2.40,labels:[]},
+{id:"blueberry",name:"Blueberries",cat:"Produce",sub:"Fresh Fruit",unit:"125g",step:1,base:2.20,labels:[]},
+{id:"mango",name:"Mango",cat:"Produce",sub:"Exotic Fruit",unit:"pc",step:1,base:1.50,labels:[]},
+{id:"avocado",name:"Avocado",cat:"Produce",sub:"Exotic Fruit",unit:"pc",step:1,base:0.99,labels:["vegan"]},
+{id:"pineapple",name:"Pineapple",cat:"Produce",sub:"Exotic Fruit",unit:"pc",step:1,base:2.50,labels:[]},
+{id:"kiwi",name:"Kiwi",cat:"Produce",sub:"Exotic Fruit",unit:"4pc",step:1,base:1.80,labels:[]},
+{id:"apple_bio",name:"Apples Bio",cat:"Produce",sub:"Bio Produce",unit:"kg",step:0.5,base:3.40,labels:["bio"]},
+{id:"carrot_bio",name:"Carrots Bio",cat:"Produce",sub:"Bio Produce",unit:"kg",step:0.5,base:2.10,labels:["bio"]},
+{id:"tomato_bio",name:"Tomatoes Bio",cat:"Produce",sub:"Bio Produce",unit:"kg",step:0.5,base:3.60,labels:["bio"]},
+{id:"veg_bio_box",name:"Bio veg box",cat:"Produce",sub:"Bio Produce",unit:"box",step:1,base:7.90,labels:["bio","vegan"]},
+{id:"tomato",name:"Tomatoes",cat:"Produce",sub:"Fresh Veg",unit:"kg",step:0.5,base:2.40,labels:[]},
+{id:"potato",name:"Potatoes",cat:"Produce",sub:"Fresh Veg",unit:"kg",step:0.5,base:1.10,labels:[]},
+{id:"carrot",name:"Carrots",cat:"Produce",sub:"Fresh Veg",unit:"kg",step:0.5,base:1.30,labels:[]},
+{id:"onion",name:"Onions",cat:"Produce",sub:"Fresh Veg",unit:"kg",step:0.5,base:1.20,labels:[]},
+{id:"garlic",name:"Garlic",cat:"Produce",sub:"Fresh Veg",unit:"pc",step:1,base:0.60,labels:[]},
+{id:"pepper",name:"Bell peppers",cat:"Produce",sub:"Fresh Veg",unit:"kg",step:0.5,base:2.80,labels:[]},
+{id:"zucchini",name:"Zucchini",cat:"Produce",sub:"Fresh Veg",unit:"kg",step:0.5,base:1.80,labels:[]},
+{id:"broccoli",name:"Broccoli",cat:"Produce",sub:"Fresh Veg",unit:"pc",step:1,base:1.50,labels:[]},
+{id:"cucumber",name:"Cucumber",cat:"Produce",sub:"Fresh Veg",unit:"pc",step:1,base:0.80,labels:[]},
+{id:"spinach",name:"Spinach",cat:"Produce",sub:"Fresh Veg",unit:"200g",step:1,base:1.80,labels:[]},
+{id:"lettuce",name:"Lettuce",cat:"Produce",sub:"Fresh Veg",unit:"pc",step:1,base:1.20,labels:[]},
+{id:"mushroom",name:"Mushrooms",cat:"Produce",sub:"Fresh Veg",unit:"kg",step:0.5,base:3.50,labels:[]},
+{id:"salad_bag",name:"Salad mix",cat:"Produce",sub:"Ready / Cut",unit:"150g",step:1,base:1.60,labels:["vegan"]},
+{id:"fruit_cut",name:"Fruit salad",cat:"Produce",sub:"Ready / Cut",unit:"pack",step:1,base:3.50,labels:["vegan"]},
+{id:"basil",name:"Basil",cat:"Produce",sub:"Herbs",unit:"pot",step:1,base:1.50,labels:[]},
+{id:"parsley",name:"Parsley",cat:"Produce",sub:"Herbs",unit:"bunch",step:1,base:0.80,labels:[]},
+{id:"mint",name:"Mint",cat:"Produce",sub:"Herbs",unit:"pot",step:1,base:1.50,labels:[]},
+{id:"chicken_br",name:"Chicken breast",cat:"Meat",sub:"Poultry",unit:"kg",step:0.5,base:7.80,labels:[]},
+{id:"chicken_wh",name:"Whole chicken",cat:"Meat",sub:"Poultry",unit:"pc",step:1,base:6.50,labels:[]},
+{id:"chicken_leg",name:"Chicken legs",cat:"Meat",sub:"Poultry",unit:"kg",step:0.5,base:5.90,labels:[]},
+{id:"turkey",name:"Turkey breast",cat:"Meat",sub:"Poultry",unit:"kg",step:0.5,base:8.50,labels:[]},
+{id:"beef_steak",name:"Beef steak",cat:"Meat",sub:"Beef",unit:"kg",step:0.5,base:18.00,labels:[]},
+{id:"beef_mince",name:"Beef mince",cat:"Meat",sub:"Mince",unit:"kg",step:0.5,base:9.50,labels:[]},
+{id:"mixed_mince",name:"Mixed mince",cat:"Meat",sub:"Mince",unit:"kg",step:0.5,base:7.80,labels:[]},
+{id:"pork_chop",name:"Pork chops",cat:"Meat",sub:"Pork",unit:"kg",step:0.5,base:6.80,labels:[]},
+{id:"lamb",name:"Lamb chops",cat:"Meat",sub:"Lamb",unit:"kg",step:0.5,base:14.00,labels:[]},
+{id:"marinated",name:"Marinated chicken",cat:"Meat",sub:"Ready to cook",unit:"pack",step:1,base:5.50,labels:[]},
+{id:"burger_raw",name:"Burger patties",cat:"Meat",sub:"Ready to cook",unit:"4pc",step:1,base:4.50,labels:[]},
+{id:"chicken_bio",name:"Chicken Bio",cat:"Meat",sub:"Bio Meat",unit:"kg",step:0.5,base:12.50,labels:["bio"]},
+{id:"bratwurst",name:"Bratwurst",cat:"Meat",sub:"Sausages",unit:"pack",step:1,base:3.50,labels:[]},
+{id:"salami",name:"Salami",cat:"Meat",sub:"Sausages",unit:"150g",step:1,base:2.80,labels:[]},
+{id:"ham",name:"Cooked ham",cat:"Meat",sub:"Sausages",unit:"150g",step:1,base:2.50,labels:[]},
+{id:"salmon",name:"Salmon fillet",cat:"Fish",sub:"Fresh Fish",unit:"kg",step:0.5,base:14.90,labels:[]},
+{id:"trout",name:"Trout",cat:"Fish",sub:"Fresh Fish",unit:"pc",step:1,base:5.50,labels:[]},
+{id:"cod",name:"Cod",cat:"Fish",sub:"Fresh Fish",unit:"kg",step:0.5,base:9.80,labels:[]},
+{id:"fish_sticks",name:"Fish sticks",cat:"Fish",sub:"Frozen Fish",unit:"400g",step:1,base:3.50,labels:[]},
+{id:"tuna_can",name:"Tuna can",cat:"Fish",sub:"Canned Fish",unit:"can",step:1,base:1.50,labels:["gluten-free"]},
+{id:"sardine_can",name:"Sardines",cat:"Fish",sub:"Canned Fish",unit:"can",step:1,base:1.20,labels:[]},
+{id:"shrimp",name:"Shrimps",cat:"Fish",sub:"Seafood",unit:"kg",step:0.5,base:12.00,labels:["gluten-free"]},
+{id:"mussel",name:"Mussels",cat:"Fish",sub:"Seafood",unit:"kg",step:0.5,base:6.50,labels:[]},
+{id:"milk_wh",name:"Whole milk",cat:"Dairy",sub:"Milk",unit:"L",step:1,base:1.05,labels:[]},
+{id:"milk_bio",name:"Milk Bio",cat:"Dairy",sub:"Milk",unit:"L",step:1,base:1.65,labels:["bio"]},
+{id:"oat_milk",name:"Oat milk",cat:"Dairy",sub:"Plant Milk",unit:"L",step:1,base:1.80,labels:["vegan","gluten-free"]},
+{id:"almond_milk",name:"Almond milk",cat:"Dairy",sub:"Plant Milk",unit:"L",step:1,base:1.90,labels:["vegan"]},
+{id:"soy_milk",name:"Soy milk",cat:"Dairy",sub:"Plant Milk",unit:"L",step:1,base:1.60,labels:["vegan"]},
+{id:"eggs_6",name:"Eggs x6",cat:"Dairy",sub:"Eggs",unit:"box",step:1,base:1.60,labels:[]},
+{id:"eggs_12",name:"Eggs x12",cat:"Dairy",sub:"Eggs",unit:"box",step:1,base:2.80,labels:[]},
+{id:"bio_eggs_6",name:"Bio eggs x6",cat:"Dairy",sub:"Eggs",unit:"box",step:1,base:3.20,labels:["bio"]},
+{id:"yogurt",name:"Yogurt",cat:"Dairy",sub:"Yogurt",unit:"500g",step:1,base:1.60,labels:[]},
+{id:"yogurt_gk",name:"Greek yogurt",cat:"Dairy",sub:"Yogurt",unit:"500g",step:1,base:2.20,labels:["gluten-free"]},
+{id:"yogurt_vg",name:"Vegan yogurt",cat:"Dairy",sub:"Yogurt",unit:"400g",step:1,base:2.50,labels:["vegan","lactose-free"]},
+{id:"butter",name:"Butter",cat:"Dairy",sub:"Butter",unit:"250g",step:1,base:2.20,labels:["gluten-free"]},
+{id:"vegan_but",name:"Vegan butter",cat:"Dairy",sub:"Butter",unit:"250g",step:1,base:2.80,labels:["vegan","lactose-free"]},
+{id:"emmental",name:"Emmental",cat:"Dairy",sub:"Hard Cheese",unit:"200g",step:1,base:2.80,labels:["gluten-free"]},
+{id:"gouda",name:"Gouda",cat:"Dairy",sub:"Hard Cheese",unit:"200g",step:1,base:2.50,labels:["gluten-free"]},
+{id:"mozzarella",name:"Mozzarella",cat:"Dairy",sub:"Soft Cheese",unit:"125g",step:1,base:1.40,labels:["gluten-free"]},
+{id:"feta",name:"Feta",cat:"Dairy",sub:"Soft Cheese",unit:"200g",step:1,base:2.50,labels:["gluten-free"]},
+{id:"cream_ch",name:"Cream cheese",cat:"Dairy",sub:"Soft Cheese",unit:"200g",step:1,base:1.80,labels:["gluten-free"]},
+{id:"cream",name:"Cream",cat:"Dairy",sub:"Cream",unit:"200ml",step:1,base:1.10,labels:[]},
+{id:"lact_free",name:"Lactose-free milk",cat:"Dairy",sub:"Lactose-Free",unit:"L",step:1,base:1.90,labels:["lactose-free"]},
+{id:"bread_wh",name:"White bread",cat:"Bakery",sub:"Bread",unit:"750g",step:1,base:2.10,labels:[]},
+{id:"bread_rye",name:"Rye bread",cat:"Bakery",sub:"Bread",unit:"750g",step:1,base:2.50,labels:[]},
+{id:"bread_wgr",name:"Wholegrain bread",cat:"Bakery",sub:"Bread",unit:"750g",step:1,base:2.80,labels:[]},
+{id:"bread_bio",name:"Bio bread",cat:"Bakery",sub:"Bread",unit:"750g",step:1,base:3.20,labels:["bio"]},
+{id:"bread_gf",name:"GF bread",cat:"Bakery",sub:"Bread",unit:"400g",step:1,base:3.80,labels:["gluten-free"]},
+{id:"baguette",name:"Baguette",cat:"Bakery",sub:"Rolls",unit:"pc",step:1,base:0.80,labels:[]},
+{id:"roll",name:"Bread rolls",cat:"Bakery",sub:"Rolls",unit:"6pc",step:1,base:1.50,labels:[]},
+{id:"pretzel",name:"Pretzel",cat:"Bakery",sub:"Rolls",unit:"pc",step:1,base:0.60,labels:[]},
+{id:"bagel",name:"Bagels",cat:"Bakery",sub:"Rolls",unit:"4pc",step:1,base:2.50,labels:[]},
+{id:"croissant",name:"Croissant",cat:"Bakery",sub:"Croissants",unit:"pc",step:1,base:0.90,labels:[]},
+{id:"pain_choc",name:"Pain au chocolat",cat:"Bakery",sub:"Croissants",unit:"pc",step:1,base:1.20,labels:[]},
+{id:"cheese_pie",name:"Cheese pie",cat:"Bakery",sub:"Savoury pastry",unit:"pc",step:1,base:2.20,labels:[]},
+{id:"spinach_pie",name:"Spinach pie",cat:"Bakery",sub:"Savoury pastry",unit:"pc",step:1,base:2.20,labels:["vegan"]},
+{id:"donut",name:"Donut",cat:"Bakery",sub:"Cakes",unit:"pc",step:1,base:1.20,labels:[]},
+{id:"muffin",name:"Muffin",cat:"Bakery",sub:"Cakes",unit:"pc",step:1,base:1.50,labels:[]},
+{id:"biscuit",name:"Biscuits",cat:"Bakery",sub:"Biscuits",unit:"pack",step:1,base:1.80,labels:[]},
+{id:"pasta_sp",name:"Spaghetti",cat:"Dry Grocery",sub:"Pasta & Rice",unit:"500g",step:1,base:1.40,labels:[]},
+{id:"pasta_penne",name:"Penne",cat:"Dry Grocery",sub:"Pasta & Rice",unit:"500g",step:1,base:1.40,labels:[]},
+{id:"pasta_gf",name:"GF pasta",cat:"Dry Grocery",sub:"Pasta & Rice",unit:"400g",step:1,base:2.80,labels:["gluten-free","vegan"]},
+{id:"rice_wh",name:"White rice",cat:"Dry Grocery",sub:"Pasta & Rice",unit:"kg",step:0.5,base:1.80,labels:["gluten-free","vegan"]},
+{id:"quinoa",name:"Quinoa",cat:"Dry Grocery",sub:"Pasta & Rice",unit:"500g",step:1,base:3.50,labels:["gluten-free","vegan"]},
+{id:"lentil",name:"Lentils",cat:"Dry Grocery",sub:"Legumes",unit:"500g",step:1,base:1.60,labels:["vegan","gluten-free"]},
+{id:"chickpea",name:"Chickpeas",cat:"Dry Grocery",sub:"Legumes",unit:"400g",step:1,base:0.90,labels:["vegan","gluten-free"]},
+{id:"tom_can",name:"Canned tomatoes",cat:"Dry Grocery",sub:"Canned",unit:"400g",step:1,base:0.80,labels:["vegan"]},
+{id:"passata",name:"Passata",cat:"Dry Grocery",sub:"Sauces",unit:"700g",step:1,base:1.40,labels:["vegan"]},
+{id:"ketchup",name:"Ketchup",cat:"Dry Grocery",sub:"Sauces",unit:"500ml",step:1,base:1.80,labels:["vegan"]},
+{id:"olive_oil",name:"Olive oil",cat:"Dry Grocery",sub:"Oils",unit:"L",step:1,base:7.20,labels:["vegan","gluten-free"]},
+{id:"sunfl_oil",name:"Sunflower oil",cat:"Dry Grocery",sub:"Oils",unit:"L",step:1,base:2.20,labels:["vegan","gluten-free"]},
+{id:"salt",name:"Salt",cat:"Dry Grocery",sub:"Spices",unit:"kg",step:1,base:0.50,labels:["vegan","gluten-free"]},
+{id:"pepper_sp",name:"Black pepper",cat:"Dry Grocery",sub:"Spices",unit:"50g",step:1,base:1.50,labels:["vegan","gluten-free"]},
+{id:"oats",name:"Oats",cat:"Dry Grocery",sub:"Breakfast",unit:"500g",step:1,base:1.40,labels:["vegan"]},
+{id:"granola",name:"Granola",cat:"Dry Grocery",sub:"Breakfast",unit:"400g",step:1,base:3.20,labels:["vegan"]},
+{id:"flour",name:"Flour",cat:"Dry Grocery",sub:"Baking",unit:"kg",step:1,base:1.10,labels:["vegan"]},
+{id:"sugar",name:"Sugar",cat:"Dry Grocery",sub:"Baking",unit:"kg",step:1,base:1.00,labels:["vegan","gluten-free"]},
+{id:"honey",name:"Honey",cat:"Dry Grocery",sub:"Spreads",unit:"500g",step:1,base:4.50,labels:["gluten-free"]},
+{id:"peanut_but",name:"Peanut butter",cat:"Dry Grocery",sub:"Spreads",unit:"350g",step:1,base:2.80,labels:["vegan","gluten-free"]},
+{id:"frz_peas",name:"Frozen peas",cat:"Frozen",sub:"Frozen Veg",unit:"500g",step:1,base:1.50,labels:["vegan","gluten-free"]},
+{id:"frz_spinach",name:"Frozen spinach",cat:"Frozen",sub:"Frozen Veg",unit:"450g",step:1,base:1.80,labels:["vegan","gluten-free"]},
+{id:"pizza_marg",name:"Pizza Margherita",cat:"Frozen",sub:"Pizza",unit:"pc",step:1,base:3.50,labels:[]},
+{id:"pizza_sal",name:"Pizza Salami",cat:"Frozen",sub:"Pizza",unit:"pc",step:1,base:3.80,labels:[]},
+{id:"lasagna",name:"Frozen lasagna",cat:"Frozen",sub:"Ready Meals",unit:"pack",step:1,base:3.90,labels:[]},
+{id:"icecream",name:"Ice cream tub",cat:"Frozen",sub:"Ice Cream",unit:"500ml",step:1,base:3.50,labels:[]},
+{id:"icecream_vg",name:"Vegan ice cream",cat:"Frozen",sub:"Ice Cream",unit:"500ml",step:1,base:4.50,labels:["vegan","lactose-free"]},
+{id:"water_still",name:"Still water",cat:"Beverages",sub:"Water",unit:"1.5L",step:1,base:0.40,labels:["vegan","gluten-free"]},
+{id:"water_sp",name:"Sparkling water",cat:"Beverages",sub:"Water",unit:"1.5L",step:1,base:0.50,labels:["vegan","gluten-free"]},
+{id:"oj",name:"Orange juice",cat:"Beverages",sub:"Juices",unit:"L",step:1,base:1.80,labels:["vegan","gluten-free"]},
+{id:"cola",name:"Cola",cat:"Beverages",sub:"Soft Drinks",unit:"1.5L",step:1,base:1.80,labels:[]},
+{id:"coffee_grd",name:"Ground coffee",cat:"Beverages",sub:"Coffee & Tea",unit:"500g",step:1,base:5.90,labels:["vegan","gluten-free"]},
+{id:"tea_black",name:"Black tea",cat:"Beverages",sub:"Coffee & Tea",unit:"20 bags",step:1,base:1.80,labels:["vegan","gluten-free"]},
+{id:"beer_lager",name:"Beer lager",cat:"Beverages",sub:"Beer",unit:"6x500ml",step:1,base:5.50,labels:[]},
+{id:"wine_red",name:"Red wine",cat:"Beverages",sub:"Wine",unit:"750ml",step:1,base:6.50,labels:["vegan","gluten-free"]},
+{id:"wine_white",name:"White wine",cat:"Beverages",sub:"Wine",unit:"750ml",step:1,base:6.50,labels:["vegan","gluten-free"]},
+{id:"dark_choc",name:"Dark chocolate",cat:"Snacks",sub:"Chocolate",unit:"100g",step:1,base:1.80,labels:["vegan"]},
+{id:"milk_choc",name:"Milk chocolate",cat:"Snacks",sub:"Chocolate",unit:"100g",step:1,base:1.60,labels:[]},
+{id:"chips",name:"Chips",cat:"Snacks",sub:"Chips",unit:"175g",step:1,base:2.20,labels:["vegan"]},
+{id:"popcorn",name:"Popcorn",cat:"Snacks",sub:"Chips",unit:"100g",step:1,base:1.80,labels:["vegan","gluten-free"]},
+{id:"mixed_nuts",name:"Mixed nuts",cat:"Snacks",sub:"Nuts",unit:"200g",step:1,base:3.50,labels:["vegan","gluten-free"]},
+{id:"granola_bar",name:"Granola bar",cat:"Snacks",sub:"Bars",unit:"4pc",step:1,base:3.20,labels:["vegan"]},
+{id:"whey",name:"Whey protein",cat:"Health",sub:"Protein",unit:"kg",step:1,base:28.00,labels:[]},
+{id:"plant_prot",name:"Plant protein",cat:"Health",sub:"Protein",unit:"kg",step:1,base:32.00,labels:["vegan"]},
+{id:"tofu",name:"Tofu",cat:"Health",sub:"Vegan Protein",unit:"400g",step:1,base:2.10,labels:["vegan","gluten-free"]},
+{id:"tempeh",name:"Tempeh",cat:"Health",sub:"Vegan Protein",unit:"200g",step:1,base:3.20,labels:["vegan","gluten-free"]},
+{id:"chia",name:"Chia seeds",cat:"Health",sub:"Superfoods",unit:"300g",step:1,base:3.50,labels:["vegan","gluten-free"]},
+{id:"vitaminc",name:"Vitamin C",cat:"Health",sub:"Supplements",unit:"60 tabs",step:1,base:5.90,labels:[]},
+{id:"vitamind",name:"Vitamin D3",cat:"Health",sub:"Supplements",unit:"60 tabs",step:1,base:7.90,labels:[]},
+{id:"detergent",name:"Laundry detergent",cat:"Household",sub:"Laundry",unit:"2L",step:1,base:4.50,labels:[]},
+{id:"dish_tabs",name:"Dishwasher tabs",cat:"Household",sub:"Kitchen",unit:"40pc",step:1,base:6.50,labels:[]},
+{id:"toilet_pap",name:"Toilet paper",cat:"Household",sub:"Paper",unit:"8 rolls",step:1,base:3.20,labels:[]},
+{id:"kitchen_pap",name:"Kitchen paper",cat:"Household",sub:"Paper",unit:"3 rolls",step:1,base:2.40,labels:[]},
+{id:"trash_bags",name:"Trash bags",cat:"Household",sub:"Cleaning",unit:"20pc",step:1,base:2.80,labels:[]},
+{id:"cling_film",name:"Cling film",cat:"Household",sub:"Kitchen wrap",unit:"30m",step:1,base:2.20,labels:[]},
+{id:"shampoo",name:"Shampoo",cat:"Personal Care",sub:"Hair",unit:"300ml",step:1,base:3.80,labels:[]},
+{id:"shower_gel",name:"Shower gel",cat:"Personal Care",sub:"Body",unit:"300ml",step:1,base:2.90,labels:[]},
+{id:"deodorant",name:"Deodorant",cat:"Personal Care",sub:"Body",unit:"150ml",step:1,base:3.20,labels:[]},
+{id:"toothpaste",name:"Toothpaste",cat:"Personal Care",sub:"Dental",unit:"75ml",step:1,base:2.50,labels:[]},
+{id:"nappies_s",name:"Nappies S",cat:"Baby",sub:"Nappies",unit:"48pc",step:1,base:9.90,labels:[]},
+{id:"nappies_m",name:"Nappies M",cat:"Baby",sub:"Nappies",unit:"44pc",step:1,base:9.90,labels:[]},
+{id:"nappies_l",name:"Nappies L",cat:"Baby",sub:"Nappies",unit:"40pc",step:1,base:10.50,labels:[]},
+{id:"wipes",name:"Baby wipes x72",cat:"Baby",sub:"Care",unit:"pack",step:1,base:3.50,labels:[]},
+{id:"formula",name:"Baby formula",cat:"Baby",sub:"Food",unit:"800g",step:1,base:18.00,labels:[]},
+{id:"baby_food",name:"Baby puree",cat:"Baby",sub:"Food",unit:"190g",step:1,base:1.20,labels:[]},
+{id:"dog_dry",name:"Dog food dry",cat:"Pet",sub:"Dog",unit:"kg",step:1,base:8.50,labels:[]},
+{id:"dog_wet",name:"Dog food wet",cat:"Pet",sub:"Dog",unit:"400g",step:1,base:1.80,labels:[]},
+{id:"cat_dry",name:"Cat food dry",cat:"Pet",sub:"Cat",unit:"kg",step:1,base:7.50,labels:[]},
+{id:"cat_wet",name:"Cat food wet",cat:"Pet",sub:"Cat",unit:"100g",step:1,base:0.90,labels:[]},
+{id:"cat_litter",name:"Cat litter",cat:"Pet",sub:"Cat",unit:"5L",step:1,base:5.50,labels:[]},
+];
+var CAT_ICONS={"Produce":"🥦","Meat":"🥩","Fish":"🐟","Dairy":"🧀","Bakery":"🥖","Dry Grocery":"🍝","Frozen":"🧊","Beverages":"🥤","Snacks":"🍫","Health":"🌱","Household":"🧼","Personal Care":"🧴","Baby":"👶","Pet":"🐶"};
+var LABEL_CFG={"bio":{icon:"🌿",cls:"lbl-bio",lbl:"Bio"},"vegan":{icon:"🌱",cls:"lbl-vegan",lbl:"Vegan"},"gluten-free":{icon:"🌾",cls:"lbl-gf",lbl:"GF"},"lactose-free":{icon:"🥛",cls:"lbl-lf",lbl:"LF"}};
+var STORES=[
+{id:"lidl_de",name:"Lidl",flag:"DE",cidx:0.95,factor:0.82,anchor:[47.54,7.70],note:"Best prices, great pantry"},
+{id:"aldi_de",name:"Aldi",flag:"DE",cidx:0.95,factor:0.80,anchor:[47.54,7.70],note:"Lowest prices overall"},
+{id:"rewe_de",name:"Rewe",flag:"DE",cidx:0.95,factor:1.02,anchor:[47.54,7.70],note:"Best variety and quality"},
+{id:"edeka_de",name:"Edeka",flag:"DE",cidx:0.95,factor:1.05,anchor:[47.54,7.70],note:"Excellent fresh produce"},
+{id:"kaufland_de",name:"Kaufland",flag:"DE",cidx:0.95,factor:0.97,anchor:[47.60,7.63],note:"Large hypermarket"},
+{id:"penny_de",name:"Penny",flag:"DE",cidx:0.95,factor:0.87,anchor:[47.54,7.70],note:"Budget-friendly basics"},
+{id:"globus_de",name:"Globus",flag:"DE",cidx:0.95,factor:0.95,anchor:[47.60,7.62],note:"Large hypermarket SW Germany"},
+{id:"hiebers_de",name:"Hieber's Frische",flag:"DE",cidx:0.95,factor:1.00,anchor:[47.54,7.69],note:"Premium fresh and bio"},
+{id:"alnatura_de",name:"Alnatura",flag:"DE",cidx:0.95,factor:1.08,anchor:[48.00,7.84],note:"Top organic, 40% cheaper than CH"},
+{id:"dm_de",name:"dm Drogerie",flag:"DE",cidx:0.95,factor:0.90,anchor:[47.54,7.70],note:"Best for baby and supplements"},
+{id:"migros_ch",name:"Migros",flag:"CH",cidx:1.62,factor:1.00,anchor:[47.56,7.59],note:"Switzerland largest retailer"},
+{id:"coop_ch",name:"Coop",flag:"CH",cidx:1.62,factor:1.02,anchor:[47.56,7.59],note:"Great Naturaplan organic range"},
+{id:"lidl_ch",name:"Lidl CH",flag:"CH",cidx:1.62,factor:0.85,anchor:[47.56,7.60],note:"Best budget in Switzerland"},
+{id:"aldi_ch",name:"Aldi CH",flag:"CH",cidx:1.62,factor:0.83,anchor:[47.56,7.60],note:"Lowest prices in Switzerland"},
+{id:"denner_ch",name:"Denner",flag:"CH",cidx:1.62,factor:0.88,anchor:[47.56,7.59],note:"Discount, great wine selection"},
+{id:"leclerc_fr",name:"E.Leclerc",flag:"FR",cidx:1.00,factor:0.88,anchor:[47.59,7.56],note:"Lowest prices in France"},
+{id:"carrefour_fr",name:"Carrefour",flag:"FR",cidx:1.00,factor:0.98,anchor:[47.75,7.34],note:"Best variety, large hypermarkets"},
+{id:"lidl_fr",name:"Lidl FR",flag:"FR",cidx:1.00,factor:0.82,anchor:[47.59,7.56],note:"Best prices, popular specials"},
+{id:"grand_frais",name:"Grand Frais",flag:"FR",cidx:1.00,factor:0.90,anchor:[47.75,7.34],note:"Exceptional fresh and cheese"},
+{id:"biocoop_fr",name:"Biocoop",flag:"FR",cidx:1.00,factor:1.05,anchor:[48.57,7.75],note:"France organic cooperative"},
+];
+var OFFERS=(function(){
+var d=new Date();d.setDate(d.getDate()+(6-d.getDay()));var exp=d.toISOString().split("T")[0];
+return[
+{sid:"lidl_de",pid:"chicken_br",price:5.99,conf:0.95,src:"PDF",exp:exp},
+{sid:"lidl_de",pid:"pasta_sp",price:0.79,conf:0.95,src:"PDF",exp:exp},
+{sid:"lidl_de",pid:"apple",price:1.49,conf:0.95,src:"PDF",exp:exp},
+{sid:"lidl_de",pid:"milk_wh",price:0.89,conf:0.95,src:"PDF",exp:exp},
+{sid:"lidl_de",pid:"oat_milk",price:1.09,conf:0.90,src:"PDF",exp:exp},
+{sid:"lidl_de",pid:"tofu",price:1.49,conf:0.90,src:"PDF",exp:exp},
+{sid:"aldi_de",pid:"butter",price:1.59,conf:0.93,src:"PDF",exp:exp},
+{sid:"aldi_de",pid:"rice_wh",price:0.99,conf:0.93,src:"PDF",exp:exp},
+{sid:"aldi_de",pid:"eggs_12",price:2.19,conf:0.93,src:"PDF",exp:exp},
+{sid:"rewe_de",pid:"salmon",price:11.99,conf:0.99,src:"API",exp:exp},
+{sid:"rewe_de",pid:"beef_mince",price:7.99,conf:0.99,src:"API",exp:exp},
+{sid:"edeka_de",pid:"emmental",price:1.99,conf:0.90,src:"PDF",exp:exp},
+{sid:"kaufland_de",pid:"whey",price:22.99,conf:0.88,src:"PDF",exp:exp},
+{sid:"hiebers_de",pid:"salmon",price:13.90,conf:0.88,src:"PDF",exp:exp},
+{sid:"alnatura_de",pid:"oat_milk",price:1.49,conf:0.95,src:"API",exp:exp},
+{sid:"alnatura_de",pid:"tofu",price:1.99,conf:0.95,src:"API",exp:exp},
+{sid:"dm_de",pid:"nappies_m",price:7.95,conf:0.93,src:"API",exp:exp},
+{sid:"migros_ch",pid:"chicken_br",price:10.90,conf:0.99,src:"API",exp:exp},
+{sid:"leclerc_fr",pid:"pasta_sp",price:0.69,conf:0.88,src:"Web",exp:exp},
+{sid:"grand_frais",pid:"salmon",price:11.90,conf:0.90,src:"Web",exp:exp},
+{sid:"biocoop_fr",pid:"bio_eggs_6",price:2.80,conf:0.90,src:"API",exp:exp},
+];
+})();
+var VOICE_MAP={
+"apple":["apple","apples","apfel","äpfel"],
+"banana":["banana","bananas","banane","bananen"],
+"orange":["orange","oranges","orangen"],
+"tomato":["tomato","tomatoes","tomate","tomaten"],
+"potato":["potato","potatoes","kartoffel","kartoffeln"],
+"carrot":["carrot","carrots","karotte","karotten","möhre"],
+"onion":["onion","onions","zwiebel","zwiebeln"],
+"garlic":["garlic","knoblauch"],
+"pepper":["bell pepper","paprika"],
+"broccoli":["broccoli","brokkoli"],
+"cucumber":["cucumber","gurke","gurken"],
+"spinach":["spinach","spinat"],
+"lettuce":["lettuce","salat"],
+"mushroom":["mushroom","mushrooms","pilz","pilze","champignon"],
+"chicken_br":["chicken","chicken breast","hähnchen","hühnchen","huhn"],
+"beef_mince":["beef","mince","hackfleisch","rinderhack"],
+"pork_chop":["pork","schweinefleisch","schwein"],
+"bratwurst":["bratwurst","wurst","sausage"],
+"salmon":["salmon","lachs"],
+"tuna_can":["tuna","thunfisch"],
+"shrimp":["shrimp","shrimps","garnelen"],
+"milk_wh":["milk","milch"],
+"oat_milk":["oat milk","hafermilch"],
+"almond_milk":["almond milk","mandelmilch"],
+"soy_milk":["soy milk","sojamilch"],
+"eggs_12":["eggs","egg","eier","ei"],
+"bio_eggs_6":["bio eggs","bio eier"],
+"yogurt":["yogurt","joghurt"],
+"yogurt_gk":["greek yogurt","griechischer joghurt"],
+"butter":["butter"],
+"emmental":["cheese","käse","emmental"],
+"mozzarella":["mozzarella"],
+"feta":["feta"],
+"cream_ch":["cream cheese","frischkäse"],
+"bread_wh":["bread","brot","weißbrot"],
+"bread_rye":["rye bread","roggenbrot"],
+"roll":["rolls","brötchen","semmeln"],
+"croissant":["croissant","croissants"],
+"pretzel":["pretzel","brezel","brezeln"],
+"baguette":["baguette"],
+"pasta_sp":["pasta","spaghetti","nudeln"],
+"pasta_penne":["penne"],
+"rice_wh":["rice","reis"],
+"oats":["oats","haferflocken"],
+"olive_oil":["olive oil","olivenöl"],
+"flour":["flour","mehl"],
+"sugar":["sugar","zucker"],
+"salt":["salt","salz"],
+"honey":["honey","honig"],
+"peanut_but":["peanut butter","erdnussbutter"],
+"coffee_grd":["coffee","kaffee"],
+"tea_black":["tea","tee"],
+"water_still":["water","wasser"],
+"cola":["cola","coke"],
+"beer_lager":["beer","bier"],
+"wine_red":["wine","wein","rotwein"],
+"wine_white":["white wine","weißwein"],
+"chips":["chips","crisps"],
+"dark_choc":["chocolate","schokolade"],
+"mixed_nuts":["nuts","nüsse"],
+"detergent":["detergent","waschmittel"],
+"toilet_pap":["toilet paper","toilettenpapier","klopapier"],
+"dish_tabs":["dishwasher","spülmaschinentabs"],
+"shampoo":["shampoo"],
+"toothpaste":["toothpaste","zahnpasta"],
+"shower_gel":["shower gel","duschgel"],
+"nappies_m":["nappies","diapers","windeln","pampers"],
+"wipes":["wipes","feuchttücher"],
+"formula":["formula","babynahrung"],
+"dog_dry":["dog food","hundefutter"],
+"cat_dry":["cat food","katzenfutter"],
+"cat_litter":["cat litter","katzenstreu"],
+"whey":["protein","whey","proteinpulver"],
+"tofu":["tofu"],
+"tempeh":["tempeh"],
+"vitaminc":["vitamin c","vitamin"],
+};
+var VOICE_INDEX={};
+PRODUCTS.forEach(function(p){VOICE_INDEX[p.name.toLowerCase()]=p.id;});
+Object.keys(VOICE_MAP).forEach(function(pid){VOICE_MAP[pid].forEach(function(kw){if(!VOICE_INDEX[kw])VOICE_INDEX[kw]=pid;});});
+function matchText(text){
+var t=text.toLowerCase();var matched=[];
+var keys=Object.keys(VOICE_INDEX).sort(function(a,b){return b.length-a.length;});
+keys.forEach(function(kw){if(t.includes(kw)){var pid=VOICE_INDEX[kw];if(!matched.includes(pid))matched.push(pid);}});
+return matched;
+}
+var CITIES={
+"grenzach-wyhlen":[47.5397,7.6867],"grenzach":[47.5397,7.6867],
+"weil am rhein":[47.5933,7.6211],"weil":[47.5933,7.6211],
+"loerrach":[47.6155,7.6611],"freiburg":[47.9990,7.8421],
+"basel":[47.5596,7.5886],"zurich":[47.3769,8.5417],
+"bern":[46.9480,7.4474],"geneva":[46.2044,6.1432],
+"lausanne":[46.5197,6.6323],"lucerne":[47.0502,8.3093],
+"winterthur":[47.5006,8.7241],"schaffhausen":[47.6959,8.6350],
+"strasbourg":[48.5734,7.7521],"colmar":[48.0793,7.3585],
+"mulhouse":[47.7508,7.3359],"saint-louis":[47.5895,7.5612],
+"berlin":[52.5200,13.4050],"munich":[48.1351,11.5820],
+"hamburg":[53.5511,9.9937],"frankfurt":[50.1109,8.6821],
+"stuttgart":[48.7758,9.1829],"cologne":[50.9333,6.9500],
+"paris":[48.8566,2.3522],"lyon":[45.7640,4.8357],
+};
+function geocode(input){
+var parts=input.toLowerCase().replace(/str\.|strasse|weg|platz|[0-9]+/g,"").split(",").map(function(s){return s.trim();});
+for(var i=parts.length-1;i>=0;i--){if(CITIES[parts[i]])return{lat:CITIES[parts[i]][0],lon:CITIES[parts[i]][1],city:parts[i]};}
+return null;
+}
+function detectCountry(lat,lon){
+if(lat>=47.2&&lat<=55.1&&lon>=5.8&&lon<=15.1)return"DE";
+if(lat>=45.8&&lat<=47.9&&lon>=5.9&&lon<=10.5)return"CH";
+return"FR";
+}
+function haversine(a,b,c,d){
+var R=6371,dL=(c-a)*Math.PI/180,dG=(d-b)*Math.PI/180;
+var x=Math.sin(dL/2)*Math.sin(dL/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dG/2)*Math.sin(dG/2);
+return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+function calcItem(pid,store){
+var prod=PRODUCTS.find(function(p){return p.id===pid;});if(!prod)return null;
+var baseAdj=prod.base*store.cidx*store.factor;
+var matching=OFFERS.filter(function(o){return o.sid===store.id&&o.pid===pid;});
+if(!matching.length)return{price:baseAdj,basePrice:baseAdj,src:"Index",conf:0.5,saving:0,hasOffer:false};
+var totC=matching.reduce(function(s,o){return s+o.conf;},0);
+var blended=matching.reduce(function(s,o){return s+o.price*(o.conf/totC);},0);
+return{price:blended,basePrice:baseAdj,src:matching[0].src,conf:Math.max.apply(null,matching.map(function(o){return o.conf;})),saving:Math.round((baseAdj-blended)/baseAdj*100),hasOffer:true};
+}
+function calcBasket(basket,store){
+var total=0,base=0,saved=0,lines=[];
+basket.forEach(function(b){
+var r=calcItem(b.pid,store);if(!r)return;
+total+=r.price*b.qty;base+=r.basePrice*b.qty;
+if(r.hasOffer)saved+=(r.basePrice-r.price)*b.qty;
+var prod=PRODUCTS.find(function(p){return p.id===b.pid;})||{};
+lines.push(Object.assign({},prod,b,r,{line:r.price*b.qty}));
+});
+return{total:total,base:base,saved:saved,lines:lines};
+}
+var state={step:"address",loc:null,radius:20,basket:[],filters:[],sortBy:"total",expandedCat:null,expandedSub:null,voiceState:"idle",voiceLang:"de-DE",matchedPids:[],recognizer:null};
+var savedLoc=null;
+try{var sl=localStorage.getItem("smartshopper_v8");if(sl){savedLoc=JSON.parse(sl);}}catch(e){}
+function showStep(s){
+state.step=s;
+["stepAddress","stepBasket","stepResults"].forEach(function(id){document.getElementById(id).classList.remove("active");});
+var map={"address":"stepAddress","basket":"stepBasket","results":"stepResults"};
+if(map[s])document.getElementById(map[s]).classList.add("active");
+var pct={"address":10,"basket":50,"results":100}[s]||10;
+document.getElementById("progressBar").style.width=pct+"%";
+document.getElementById("restartBtn").style.display=s==="address"?"none":"block";
+window.scrollTo(0,0);
+}
+function setCity(c){document.getElementById("addrInput").value=c;}
+function setRadius(r){document.getElementById("radiusSlider").value=r;document.getElementById("radiusVal").textContent=r+" km";state.radius=r;}
+function restart(){state.basket=[];state.matchedPids=[];showStep("address");renderCategories();}
+function goBack(){showStep("basket");}
+function useSaved(){state.loc=savedLoc;document.getElementById("locLabel").textContent=savedLoc.flag+" "+savedLoc.city+" · "+state.radius+" km";showStep("basket");renderCategories();}
+function saveLoc(){if(!state.loc)return;savedLoc=state.loc;try{localStorage.setItem("smartshopper_v8",JSON.stringify(savedLoc));}catch(e){}alert("Location saved!");}
+function clearSaved(){savedLoc=null;try{localStorage.removeItem("smartshopper_v8");}catch(e){}document.getElementById("savedLocCard").style.display="none";}
+function resolveAddr(){
+var v=document.getElementById("addrInput").value;
+var geo=geocode(v);
+var err=document.getElementById("geoErr");
+if(!geo){err.textContent="City not found. Try: Basel / Freiburg / Grenzach-Wyhlen";err.style.display="block";return;}
+err.style.display="none";
+var country=detectCountry(geo.lat,geo.lon);
+var flag=country==="CH"?"CH":country==="FR"?"FR":"DE";
+state.loc={lat:geo.lat,lon:geo.lon,city:geo.city,country:country,flag:flag,input:v};
+state.radius=parseInt(document.getElementById("radiusSlider").value)||20;
+document.getElementById("locLabel").textContent=flag+" "+geo.city+" · "+state.radius+" km";
+document.getElementById("analyzeBtn").textContent="Find Best Prices — "+state.radius+" km";
+showStep("basket");renderCategories();
+}
+if(savedLoc){document.getElementById("savedLocCard").style.display="block";document.getElementById("savedLocName").textContent=savedLoc.city;document.getElementById("savedLocCountry").textContent=savedLoc.country;}
+function toggleLang(){state.voiceLang=state.voiceLang==="de-DE"?"en-US":"de-DE";document.getElementById("langBtn").textContent=state.voiceLang==="de-DE"?"DE":"EN";}
+function toggleVoice(){if(state.voiceState==="listening"){stopVoice();}else{startVoice();}}
+function startVoice(){
+document.getElementById("permissionTip").style.display="none";
+var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(!SR){document.getElementById("permissionTip").style.display="block";document.getElementById("permissionTip").innerHTML="Voice not supported. Use text input below.";return;}
+if(state.recognizer){try{state.recognizer.abort();}catch(e){}}
+var rec=new SR();
+rec.lang=state.voiceLang;rec.continuous=false;rec.interimResults=true;rec.maxAlternatives=1;
+rec.onstart=function(){state.voiceState="listening";document.getElementById("voiceSubtitle").textContent="Listening... say your items now";document.getElementById("voiceSubtitle").style.color="var(--green)";updateVoiceUI();};
+rec.onresult=function(e){
+var interim="",final_t="";
+for(var i=e.resultIndex;i<e.results.length;i++){if(e.results[i].isFinal)final_t+=e.results[i][0].transcript;else interim+=e.results[i][0].transcript;}
+var shown=final_t||interim;
+if(shown){document.getElementById("transcriptBox").style.display="block";document.getElementById("transcriptBox").textContent='"'+shown+'"';document.getElementById("quickInput").value=shown;}
+if(final_t){state.voiceState="processing";updateVoiceUI();processRecognized(final_t);}
+};
+rec.onerror=function(e){
+state.voiceState="idle";
+if(e.error==="not-allowed"||e.error==="permission-denied"){
+document.getElementById("permissionTip").style.display="block";
+document.getElementById("permissionTip").innerHTML=isIOS?"iPhone: Settings → Safari → Microphone → Allow. Then reload.":"Click the 🔒 in address bar → Allow microphone → Reload.";
+}else if(e.error==="no-speech"){document.getElementById("voiceSubtitle").textContent="No speech detected. Try again!";}
+updateVoiceUI();
+};
+rec.onend=function(){if(state.voiceState==="listening"){state.voiceState="idle";updateVoiceUI();}};
+state.recognizer=rec;
+try{rec.start();}catch(e){state.voiceState="idle";updateVoiceUI();}
+}
+function stopVoice(){if(state.recognizer){try{state.recognizer.stop();}catch(e){}}state.voiceState="idle";updateVoiceUI();}
+function processRecognized(text){var matched=matchText(text);state.matchedPids=matched;state.voiceState=matched.length>0?"done":"nomatch";updateVoiceUI();if(matched.length>0)renderMatchedItems();}
+function processText(){var v=document.getElementById("quickInput").value.trim();if(!v)return;processRecognized(v);}
+function updateVoiceUI(){
+var vs=state.voiceState;
+var card=document.getElementById("voiceCard");
+var title=document.getElementById("voiceTitle");
+var btn=document.getElementById("micBtn");
+var btnText=document.getElementById("micBtnText");
+var ripple=document.getElementById("rippleWrap");
+card.className="voice-card"+(vs==="listening"?" listening":vs==="done"?" done":"");
+title.textContent=vs==="idle"?"🎙 Voice / Text input":vs==="listening"?"🔴 Listening...":vs==="processing"?"⏳ Recognising...":vs==="done"?"✅ "+state.matchedPids.length+" items found":"🎙 Voice / Text input";
+title.style.color=vs==="listening"?"#f87171":vs==="done"?"#10b981":"#8aaabb";
+btn.className="mic-btn"+(vs==="listening"?" listening":"");
+btnText.textContent=vs==="listening"?"Stop":"Start";
+var existingRipple=ripple.querySelector(".ripple");
+if(vs==="listening"){if(!existingRipple){var r=document.createElement("div");r.className="ripple";ripple.appendChild(r);}}
+else{if(existingRipple)existingRipple.remove();}
+document.getElementById("noMatchBox").style.display=vs==="nomatch"?"block":"none";
+document.getElementById("matchedBox").style.display=vs==="done"&&state.matchedPids.length>0?"block":"none";
+}
+function renderMatchedItems(){
+var grid=document.getElementById("matchedGrid");grid.innerHTML="";
+document.getElementById("matchCount").textContent="Found "+state.matchedPids.length+" items:";
+state.matchedPids.forEach(function(pid){
+var p=PRODUCTS.find(function(x){return x.id===pid;});if(!p)return;
+var already=state.basket.find(function(b){return b.pid===pid;});
+var div=document.createElement("div");div.className="tag";
+div.innerHTML=(already?"<span>✓</span>":"")+p.name+'<span style="font-size:9px;color:#3a7a5a">'+p.unit+"</span>";
+grid.appendChild(div);
+});
+}
+function addAllMatched(){
+state.matchedPids.forEach(function(pid){if(!state.basket.find(function(b){return b.pid===pid;})){state.basket.push({pid:pid,qty:1});}});
+state.voiceState="idle";state.matchedPids=[];
+document.getElementById("quickInput").value="";document.getElementById("transcriptBox").style.display="none";
+updateVoiceUI();updateItemCount();renderCategories();
+}
+function clearVoice(){state.voiceState="idle";state.matchedPids=[];document.getElementById("quickInput").value="";document.getElementById("transcriptBox").style.display="none";updateVoiceUI();}
+function toggleFilter(lbl){
+var i=state.filters.indexOf(lbl);if(i>=0)state.filters.splice(i,1);else state.filters.push(lbl);
+document.querySelectorAll(".filter-btn").forEach(function(b){b.classList.toggle("active",state.filters.includes(b.dataset.lbl));});
+document.getElementById("clearFiltersBtn").style.display=state.filters.length?"inline":"none";
+renderCategories();
+}
+function clearFilters(){state.filters=[];document.querySelectorAll(".filter-btn").forEach(function(b){b.classList.remove("active");});document.getElementById("clearFiltersBtn").style.display="none";renderCategories();}
+function updateItemCount(){
+var n=state.basket.length;
+var el=document.getElementById("itemCount");el.style.display=n>0?"inline":"none";el.textContent=n;
+document.getElementById("analyzeWrap").style.display=n>0?"block":"none";
+}
+function toggleItem(pid){
+var i=state.basket.findIndex(function(b){return b.pid===pid;});
+if(i>=0)state.basket.splice(i,1);else state.basket.push({pid:pid,qty:1});
+updateItemCount();renderCategories();
+}
+function changeQty(pid,delta){
+var item=state.basket.find(function(b){return b.pid===pid;});if(!item)return;
+var prod=PRODUCTS.find(function(p){return p.id===pid;})||{step:1};
+item.qty=Math.round((item.qty+delta*prod.step)*10)/10;
+if(item.qty<=0){state.basket=state.basket.filter(function(b){return b.pid!==pid;});}
+updateItemCount();renderCategories();
+}
+function setSortBy(s){
+state.sortBy=s;
+["sortTotal","sortSaving","sortDist"].forEach(function(id){document.getElementById(id).classList.remove("active");});
+document.getElementById(s==="total"?"sortTotal":s==="saving"?"sortSaving":"sortDist").classList.add("active");
+}
+function renderCategories(){
+var search=document.getElementById("searchInput").value.toLowerCase();
+var tree=document.getElementById("catTree");tree.innerHTML="";
+var cats=Object.keys(CAT_ICONS);
+cats.forEach(function(cat){
+var prods=PRODUCTS.filter(function(p){
+if(p.cat!==cat)return false;
+if(state.filters.length>0&&!state.filters.every(function(l){return p.labels.includes(l);}))return false;
+if(search&&!p.name.toLowerCase().includes(search)&&!p.sub.toLowerCase().includes(search))return false;
+return true;
+});
+if(!prods.length)return;
+var subs=[];prods.forEach(function(p){if(!subs.includes(p.sub))subs.push(p.sub);});
+var selCount=prods.filter(function(p){return state.basket.find(function(b){return b.pid===p.id;});}).length;
+var isOpenCat=state.expandedCat===cat;
+var catWrap=document.createElement("div");catWrap.style.marginBottom="7px";
+var catBtn=document.createElement("button");catBtn.className="cat-btn";
+catBtn.innerHTML='<span>'+(CAT_ICONS[cat]||"")+" "+cat+"</span>"+'<span style="display:flex;align-items:center;gap:6px">'+(selCount>0?'<span class="badge">'+selCount+"</span>":"")+'<span style="font-size:9px;color:var(--muted)">'+(isOpenCat?"▲":"▼")+"</span></span>";
+catBtn.onclick=function(){state.expandedCat=isOpenCat?null:cat;state.expandedSub=null;renderCategories();};
+catWrap.appendChild(catBtn);
+if(isOpenCat){
+var subWrap=document.createElement("div");subWrap.style.paddingTop="3px";
+subs.forEach(function(sub){
+var subProds=prods.filter(function(p){return p.sub===sub;});
+var selSub=subProds.filter(function(p){return state.basket.find(function(b){return b.pid===p.id;});}).length;
+var subKey=cat+"|"+sub;var isOpenSub=state.expandedSub===subKey;
+var subDiv=document.createElement("div");subDiv.style.cssText="margin-bottom:4px;margin-left:8px";
+var subBtn=document.createElement("button");subBtn.className="sub-btn";
+subBtn.innerHTML='<span style="flex:1">— '+sub+"</span>"+(selSub>0?'<span style="background:rgba(16,185,129,0.18);color:#10b981;border-radius:20px;padding:1px 6px;font-size:10px;font-weight:700">'+selSub+"</span>":"")+'<span style="font-size:9px;color:#3a5a6a;margin-left:6px">'+(isOpenSub?"▲":"▼")+"</span>";
+subBtn.onclick=function(){state.expandedSub=isOpenSub?null:subKey;renderCategories();};
+subDiv.appendChild(subBtn);
+if(isOpenSub){
+var prodWrap=document.createElement("div");prodWrap.style.cssText="display:flex;flex-wrap:wrap;gap:4px;padding:7px 3px";
+subProds.forEach(function(prod){
+var sel=!!state.basket.find(function(b){return b.pid===prod.id;});
+var bItem=state.basket.find(function(b){return b.pid===prod.id;});
+var chip=document.createElement("div");chip.className="prod-chip"+(sel?" sel":"");
+var lblIcons=prod.labels.map(function(l){var cfg=LABEL_CFG[l];if(!cfg)return"";return'<span class="'+cfg.cls+'">'+cfg.icon+"</span>";}).join("");
+var qtyHtml="";
+if(sel&&bItem){qtyHtml='<span class="qty-ctrl" onclick="event.stopPropagation()"><button class="qty-btn" onclick="changeQty(\''+prod.id+'\',-1)">−</button><span class="qty-val">'+bItem.qty+" "+prod.unit+'</span><button class="qty-btn" onclick="changeQty(\''+prod.id+'\',1)">+</button></span>';}
+chip.innerHTML='<span onclick="toggleItem(\''+prod.id+'\')" style="cursor:pointer;display:flex;align-items:center;gap:4px">'+prod.name+'<span style="font-size:9px;color:var(--muted)">'+prod.unit+"</span>"+lblIcons+"</span>"+qtyHtml;
+prodWrap.appendChild(chip);
+});
+subDiv.appendChild(prodWrap);
+}
+subWrap.appendChild(subDiv);
+});
+catWrap.appendChild(subWrap);
+}
+tree.appendChild(catWrap);
+});
+}
+function analyze(){
+if(!state.loc){alert("Please set your location first.");return;}
+var radius=parseInt(document.getElementById("radiusSlider").value)||state.radius;
+var stores=STORES.map(function(s){var dist=haversine(state.loc.lat,state.loc.lon,s.anchor[0],s.anchor[1]);return Object.assign({},s,{distKm:Math.round(dist*10)/10});}).filter(function(s){return s.distKm<=radius;});
+if(!stores.length){document.getElementById("resultsList").innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)"><div style="font-size:32px;margin-bottom:10px">🗺️</div><div>No stores found within '+radius+' km.</div></div>';showStep("results");return;}
+var ranked=stores.map(function(s){var r=calcBasket(state.basket,s);return Object.assign({},s,r);}).sort(function(a,b){if(state.sortBy==="dist")return a.distKm-b.distKm;if(state.sortBy==="saving")return b.saved-a.saved;return a.total-b.total;});
+document.getElementById("resultsHeader").textContent=ranked.length+" stores · "+radius+" km from "+state.loc.city;
+var html="";var homeFlag=state.loc.flag;
+ranked.forEach(function(s,i){
+var isBest=i===0&&state.sortBy==="total";var cross=s.flag!==homeFlag;
+html+='<div class="store-card'+(isBest?" best":'"')+'" onclick="toggleBreakdown(\'bd_'+s.id+'\')">';
+html+='<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">';
+html+='<div style="flex:1"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">';
+if(isBest)html+='<span style="background:rgba(16,185,129,0.15);color:#10b981;border-radius:5px;padding:1px 6px;font-size:9px;font-weight:700">BEST</span>';
+if(cross)html+='<span style="background:rgba(59,130,246,0.12);color:#60a5fa;border-radius:5px;padding:1px 6px;font-size:9px;font-weight:700">CROSS-BORDER</span>';
+html+='<span style="font-size:14px;font-weight:700;color:#d0e8f0">'+s.flag+' '+s.name+'</span></div>';
+html+='<div style="font-size:11px;color:var(--muted)">'+s.distKm+' km · '+s.note+'</div></div>';
+html+='<div style="text-align:right;flex-shrink:0"><div style="font-size:17px;font-weight:800;color:'+(isBest?"#10b981":"#a0c0cc")+'">EUR '+s.total.toFixed(2)+'</div>';
+if(s.saved>0.01)html+='<div style="font-size:11px;color:#4ade80">-EUR '+s.saved.toFixed(2)+'</div>';
+html+='<div style="font-size:10px;color:#1a5a6a">'+s.lines.filter(function(l){return l.hasOffer;}).length+'/'+s.lines.length+' offers</div></div></div>';
+html+='<div id="bd_'+s.id+'" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)">';
+s.lines.forEach(function(line){
+html+='<div class="breakdown-row"><div style="flex:1"><span style="font-size:12px;color:'+(line.hasOffer?"#a0e8c8":"#6a8a9a")+'">'+line.name+'</span>';
+html+='<span style="font-size:10px;color:#3a5a6a;margin-left:4px">x'+line.qty+' '+line.unit+'</span>';
+if(line.hasOffer)html+='<span style="margin-left:5px;font-size:9px;color:#10b981;background:rgba(16,185,129,0.1);border-radius:4px;padding:1px 5px">-'+line.saving+'%</span>';
+html+='<div style="font-size:9px;color:#2a5a6a">EUR '+line.price.toFixed(2)+'/'+line.unit+' · '+line.src+'</div></div>';
+html+='<div style="text-align:right"><div style="font-size:13px;font-weight:700;color:#c0d8e0">EUR '+line.line.toFixed(2)+'</div>';
+if(line.hasOffer)html+='<div style="font-size:9px;color:#3a5a6a;text-decoration:line-through">EUR '+(line.basePrice*line.qty).toFixed(2)+'</div>';
+html+='</div></div>';
+});
+html+='<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:7px;border-top:1px solid rgba(255,255,255,0.07)"><span style="font-size:12px;color:var(--soft)">Total</span><span style="font-size:15px;font-weight:800;color:#10b981">EUR '+s.total.toFixed(2)+'</span></div>';
+html+='</div></div>';
+});
+var crossStores=ranked.filter(function(s){return s.flag!==homeFlag;});
+if(crossStores.length>0){
+html+='<div class="cross-border"><div style="font-size:10px;color:#60a5fa;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px">Cross-border stores in range</div>';
+var homeBest=ranked.filter(function(x){return x.flag===homeFlag;}).sort(function(a,b){return a.total-b.total;})[0];
+crossStores.forEach(function(s){
+var diff=homeBest?((homeBest.total-s.total)/homeBest.total*100):0;
+var color=diff>0?"#4ade80":diff<-2?"#f87171":"#7aa0b0";
+var txt=diff>0.5?diff.toFixed(0)+"% cheaper":diff<-0.5?Math.abs(diff).toFixed(0)+"% pricier":"Similar";
+html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px"><span style="font-size:12px;font-weight:600">'+s.flag+' '+s.name+' <span style="font-weight:400;color:var(--muted);font-size:11px">'+s.distKm+' km</span></span><span style="font-size:12px;font-weight:700;color:'+color+'">'+txt+' · EUR '+s.total.toFixed(2)+'</span></div>';
+});
+html+='</div>';
+}
+document.getElementById("resultsList").innerHTML=html;
+showStep("results");
+}
+function toggleBreakdown(id){
+var el=document.getElementById(id);if(!el)return;
+el.style.display=el.style.display==="none"?"block":"none";
+el.closest(".store-card").classList.toggle("sel",el.style.display==="block");
+}
+renderCategories();
+updateItemCount();
+</script>
+</body>
+</html>
