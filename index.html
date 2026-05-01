@@ -64,153 +64,62 @@ input,button{font-family:inherit}
 .breakdown-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:8px}
 .permission-tip{background:rgba(251,146,60,0.08);border:1px solid rgba(251,146,60,0.25);border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#fb923c;line-height:1.6}
 .cross-border{background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07111a;--card:rgba(255,255,255,0.05);--border:rgba(255,255,255,0.09);
+  --green:#10b981;--blue:#3b82f6;--red:#ef4444;--orange:#f59e0b;
+  --text:#dde8f0;--muted:#4a7a8a;--soft:#8aaabb;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;padding-bottom:80px;font-size:18px}
+.header{background:rgba(16,185,129,0.07);border-bottom:1px solid rgba(16,185,129,0.15);padding:16px 18px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+.header h1{font-size:22px;font-weight:700}
+.header p{font-size:14px;color:var(--muted)}
+.progress{height:4px;background:rgba(255,255,255,0.05)}
+.progress-bar{height:100%;background:linear-gradient(90deg,var(--green),var(--blue));transition:width 0.4s}
+.container{max-width:680px;margin:0 auto;padding:0 14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:13px}
+input,button{font-family:inherit;font-size:18px}
+.btn-green{background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:14px 22px;cursor:pointer;font-weight:700;font-size:18px}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--soft);border-radius:9px;padding:10px 16px;cursor:pointer;font-size:18px}
+.tag{display:inline-flex;align-items:center;gap:4px;background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.28);border-radius:7px;padding:6px 11px;font-size:16px;color:var(--green)}
+.step{display:none;padding-top:22px}
+.step.active{display:block}
+.quick-cities{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.city-btn{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;color:var(--muted);padding:6px 14px;cursor:pointer;font-size:16px}
+.city-btn:hover{border-color:var(--green);color:var(--green)}
+.voice-card{border-radius:13px;padding:16px;margin-bottom:14px;transition:all 0.3s;border:1px solid var(--border);background:rgba(255,255,255,0.02)}
+.voice-card.listening{border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.06)}
+.voice-card.done{border-color:rgba(16,185,129,0.35);background:rgba(16,185,129,0.05)}
+.mic-btn{display:flex;align-items:center;gap:8px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#f87171;border-radius:10px;padding:12px 20px;cursor:pointer;font-size:18px;font-weight:700;transition:all 0.2s}
+.mic-btn.listening{background:rgba(239,68,68,0.3);border-color:rgba(239,68,68,0.6)}
+.lang-btn{background:rgba(255,255,255,0.07);border:1px solid var(--border);color:var(--soft);border-radius:8px;padding:10px 16px;cursor:pointer;font-size:18px;font-weight:700}
+.transcript{background:rgba(255,255,255,0.04);border-radius:8px;padding:10px 14px;font-size:18px;color:#a0c8d8;font-style:italic;margin:10px 0}
+.matched-grid{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.cat-btn{width:100%;display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--border);border-radius:12px;color:var(--text);padding:14px 16px;cursor:pointer;font-size:20px;font-weight:600;text-align:left}
+.sub-btn{width:100%;display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:9px;color:#7a9aaa;padding:10px 14px;cursor:pointer;font-size:18px;text-align:left;margin-bottom:4px}
+.prod-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:9px;padding:8px 13px;cursor:pointer;font-size:18px;color:#8aaabb;transition:all 0.15s;margin:3px}
+.prod-chip.sel{background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.35);color:var(--green);font-weight:700}
+.qty-ctrl{display:inline-flex;align-items:center;gap:3px;margin-left:6px}
+.qty-btn{background:none;border:none;color:#5a9a7a;cursor:pointer;font-size:20px;padding:0 4px;line-height:1}
+.qty-val{font-size:16px;color:var(--green);min-width:36px;text-align:center}
+.lbl-bio{font-size:13px;color:#22c55e}.lbl-vegan{font-size:13px;color:#a3e635}.lbl-gf{font-size:13px;color:#fb923c}.lbl-lf{font-size:13px;color:#38bdf8}
+.store-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:13px;padding:16px;margin-bottom:10px;cursor:pointer;transition:all 0.2s}
+.store-card:hover,.store-card.sel{background:rgba(16,185,129,0.07);border-color:rgba(16,185,129,0.35)}
+.filter-btn{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;color:var(--muted);padding:8px 14px;cursor:pointer;font-size:16px;transition:all 0.15s}
+.filter-btn.active{border-color:var(--green);color:var(--green);background:rgba(16,185,129,0.1);font-weight:700}
+.sort-btn{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;color:#4a7a8a;padding:7px 14px;cursor:pointer;font-size:16px}
+.sort-btn.active{background:rgba(16,185,129,0.1);border-color:rgba(16,185,129,0.35);color:var(--green);font-weight:700}
+.badge{background:var(--green);color:#fff;border-radius:20px;padding:3px 12px;font-size:16px;font-weight:700}
+.ripple-wrap{position:relative;display:inline-block}
+@keyframes ripple{0%{transform:scale(0.8);opacity:1}100%{transform:scale(2.5);opacity:0}}
+.ripple{position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(239,68,68,0.5);animation:ripple 1.2s infinite}
+.divider{height:1px;background:rgba(255,255,255,0.06);margin:12px 0}
+.breakdown-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px}
+.permission-tip{background:rgba(251,146,60,0.08);border:1px solid rgba(251,146,60,0.25);border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:18px;color:#fb923c;line-height:1.6}
+.cross-border{background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.18);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+h2{font-size:24px}
 </style>
-</head>
-<body>
-<div class="header">
-  <span style="font-size:22px">🛒</span>
-  <div style="flex:1">
-    <h1>Smart Shopper <span style="font-size:11px;color:var(--muted);font-weight:400">DE/CH/FR · Voice · Full Supermarket</span></h1>
-  </div>
-  <button class="btn-outline" onclick="restart()" id="restartBtn" style="display:none">↺</button>
-</div>
-<div class="progress"><div class="progress-bar" id="progressBar" style="width:10%"></div></div>
-<div class="container">
-<!-- STEP 1: ADDRESS -->
-<div class="step active" id="stepAddress">
-  <div style="text-align:center;padding:24px 0 18px">
-    <div style="font-size:32px;margin-bottom:8px">📍</div>
-    <h2 style="font-size:19px;margin-bottom:6px">Where are you shopping?</h2>
-    <p style="font-size:12px;color:var(--muted)">Enter your city — we find all stores within your radius including cross-border.</p>
-  </div>
-  <div id="savedLocCard" style="display:none;background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.25);border-radius:13px;padding:14px 17px;margin-bottom:14px">
-    <div style="font-size:10px;color:var(--green);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px">📍 Saved location</div>
-    <div id="savedLocName" style="font-size:17px;font-weight:700"></div>
-    <div id="savedLocCountry" style="font-size:12px;color:#4a8a9a;margin-bottom:11px"></div>
-    <div style="display:flex;gap:8px">
-      <button class="btn-green" onclick="useSaved()" style="flex:1;padding:10px 0;font-size:13px">Use saved</button>
-      <button onclick="clearSaved()" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#f87171;border-radius:9px;padding:10px 13px;cursor:pointer">🗑</button>
-    </div>
-  </div>
-  <div class="card" style="padding:16px;margin-bottom:14px">
-    <p style="font-size:12px;color:var(--muted);margin-bottom:9px">City or address:</p>
-    <div style="display:flex;gap:8px">
-      <input id="addrInput" type="text" placeholder="Basel / Grenzach-Wyhlen / Freiburg..." onkeydown="if(event.key==='Enter')resolveAddr()" style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:9px;color:var(--text);padding:10px 13px;font-size:13px;outline:none">
-      <button class="btn-green" onclick="resolveAddr()">Go</button>
-    </div>
-    <div id="geoErr" style="font-size:11px;color:#f87171;margin-top:6px;display:none"></div>
-    <div class="quick-cities">
-      <button class="city-btn" onclick="setCity('Grenzach-Wyhlen')">Grenzach-Wyhlen</button>
-      <button class="city-btn" onclick="setCity('Basel')">Basel</button>
-      <button class="city-btn" onclick="setCity('Freiburg')">Freiburg</button>
-      <button class="city-btn" onclick="setCity('Weil am Rhein')">Weil am Rhein</button>
-      <button class="city-btn" onclick="setCity('Loerrach')">Lörrach</button>
-      <button class="city-btn" onclick="setCity('Mulhouse')">Mulhouse</button>
-      <button class="city-btn" onclick="setCity('Saint-Louis')">Saint-Louis</button>
-      <button class="city-btn" onclick="setCity('Zurich')">Zurich</button>
-    </div>
-  </div>
-  <div class="card" style="padding:16px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <span style="font-size:13px;font-weight:600">Search radius</span>
-      <span id="radiusVal" style="font-size:20px;font-weight:800;color:var(--green)">20 km</span>
-    </div>
-    <input type="range" id="radiusSlider" min="2" max="80" value="20" oninput="document.getElementById('radiusVal').textContent=this.value+' km'" style="width:100%;accent-color:var(--green);cursor:pointer">
-    <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px"><span>2</span><span>20</span><span>40</span><span>60</span><span>80 km</span></div>
-    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
-      <button class="city-btn" onclick="setRadius(5)">5 km</button>
-      <button class="city-btn" onclick="setRadius(10)">10 km</button>
-      <button class="city-btn" onclick="setRadius(20)">20 km</button>
-      <button class="city-btn" onclick="setRadius(30)">30 km</button>
-      <button class="city-btn" onclick="setRadius(50)">50 km</button>
-    </div>
-  </div>
-</div>
-
-<!-- STEP 2: BASKET -->
-<div class="step" id="stepBasket">
-  <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0 10px;flex-wrap:wrap;gap:8px">
-    <div>
-      <span style="font-size:16px;font-weight:700">Shopping List</span>
-      <span id="locLabel" style="font-size:11px;color:var(--muted);margin-left:8px"></span>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <span id="itemCount" class="badge" style="display:none">0</span>
-      <button onclick="saveLoc()" style="background:none;border:none;color:#2a8a6a;cursor:pointer;font-size:11px;text-decoration:underline">save location</button>
-    </div>
-  </div>
-
-  <!-- VOICE CARD -->
-  <div class="voice-card" id="voiceCard">
-    <div id="permissionTip" class="permission-tip" style="display:none"></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-      <div>
-        <div id="voiceTitle" style="font-size:13px;font-weight:700;color:#8aaabb">🎙 Voice / Text input</div>
-        <div id="voiceSubtitle" style="font-size:10px;color:var(--muted);margin-top:2px">Say items in German or English — Milch, Kartoffeln, Lachs</div>
-      </div>
-      <div style="display:flex;gap:7px;align-items:center">
-        <button class="lang-btn" id="langBtn" onclick="toggleLang()">DE</button>
-        <div class="ripple-wrap" id="rippleWrap">
-          <button class="mic-btn" id="micBtn" onclick="toggleVoice()">
-            <span style="font-size:18px">🎙</span><span id="micBtnText">Start</span>
-          </button>
-        </div>
-      </div>
-    </div>
-    <div id="transcriptBox" style="display:none" class="transcript"></div>
-    <div style="display:flex;gap:7px;margin-top:6px">
-      <input id="quickInput" type="text" placeholder="Or type: Milch, Eier, Brot, salmon..."
-        onkeydown="if(event.key==='Enter')processText()"
-        style="flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--text);padding:8px 12px;font-size:12px;outline:none">
-      <button onclick="processText()" style="background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.3);color:var(--green);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:12px;font-weight:700">Find</button>
-    </div>
-    <div id="matchedBox" style="display:none;margin-top:10px">
-      <div style="font-size:10px;color:var(--green);font-weight:700;margin-bottom:6px" id="matchCount"></div>
-      <div class="matched-grid" id="matchedGrid"></div>
-      <div style="display:flex;gap:7px;margin-top:6px">
-        <button onclick="addAllMatched()" class="btn-green" style="font-size:12px;padding:8px 16px">+ Add all to list</button>
-        <button onclick="clearVoice()" class="btn-outline" style="font-size:11px">clear</button>
-      </div>
-    </div>
-    <div id="noMatchBox" style="display:none;font-size:11px;color:#fb923c;margin-top:6px">No products matched. Try different words.</div>
-  </div>
-
-  <input id="searchInput" type="text" placeholder="Search products... (chicken, bio, gluten-free)"
-    oninput="renderCategories()"
-    style="width:100%;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.11);border-radius:9px;color:var(--text);padding:9px 13px;font-size:13px;outline:none;margin-bottom:10px">
-
-  <div style="display:flex;gap:7px;margin-bottom:11px;flex-wrap:wrap;align-items:center">
-    <span style="font-size:10px;color:var(--muted)">Filter:</span>
-    <button class="filter-btn" data-lbl="bio" onclick="toggleFilter('bio')">🌿 Bio</button>
-    <button class="filter-btn" data-lbl="vegan" onclick="toggleFilter('vegan')">🌱 Vegan</button>
-    <button class="filter-btn" data-lbl="gluten-free" onclick="toggleFilter('gluten-free')">🌾 GF</button>
-    <button class="filter-btn" data-lbl="lactose-free" onclick="toggleFilter('lactose-free')">🥛 LF</button>
-    <button onclick="clearFilters()" style="background:none;border:none;color:#3a6a7a;cursor:pointer;font-size:10px;text-decoration:underline;display:none" id="clearFiltersBtn">clear</button>
-  </div>
-
-  <div id="catTree"></div>
-
-  <div id="analyzeWrap" style="display:none;margin-top:16px">
-    <div style="display:flex;gap:7px;margin-bottom:11px;flex-wrap:wrap;align-items:center">
-      <span style="font-size:11px;color:var(--muted)">Sort:</span>
-      <button class="sort-btn active" id="sortTotal" onclick="setSortBy('total')">💰 Cheapest</button>
-      <button class="sort-btn" id="sortSaving" onclick="setSortBy('saving')">🏷 Best offers</button>
-      <button class="sort-btn" id="sortDist" onclick="setSortBy('dist')">📍 Nearest</button>
-    </div>
-    <button class="btn-green" onclick="analyze()" style="width:100%;padding:14px 0;font-size:15px" id="analyzeBtn">Find Best Prices</button>
-  </div>
-</div>
-
-<!-- STEP 3: RESULTS -->
-<div class="step" id="stepResults">
-  <div id="resultsHeader" style="font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;padding:14px 0 9px"></div>
-  <div id="resultsList"></div>
-  <div style="font-size:10px;color:#1a5a6a;text-align:center;margin:8px 0">Prices: index baseline + weekly offers</div>
-  <button onclick="goBack()" style="width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);color:#5a8a9a;border-radius:11px;padding:12px;cursor:pointer;font-size:12px">← Edit list</button>
-</div>
-
-</div><!-- /container -->
-<script>
 var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
 var PRODUCTS=[
 {id:"apple",name:"Apples",cat:"Produce",sub:"Fresh Fruit",unit:"kg",step:0.5,base:2.20,labels:[]},
