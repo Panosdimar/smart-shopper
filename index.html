@@ -227,100 +227,95 @@ input[type=range]{accent-color:var(--green);width:100%;cursor:pointer}
 <script>
 var isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
 var PRODUCTS = [];
-var TAXONOMY = null;
 
-// Load taxonomy from taxonomy.json
-fetch('taxonomy.json')
-  .then(function(r){ return r.json(); })
-  .then(function(data){
-    TAXONOMY = data;
-    // Flatten all product_types into PRODUCTS array
+async function loadTaxonomy(){
+  try{
+    var resp = await fetch('./taxonomy.json');
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    var data = await resp.json();
     data.segments.forEach(function(seg){
       seg.categories.forEach(function(cat){
         cat.subcategories.forEach(function(sub){
           sub.product_types.forEach(function(pt){
+            var id = pt.name.toLowerCase().replace(/[^a-z0-9]+/g,'_').substring(0,30);
             PRODUCTS.push({
-              id: pt.name.toLowerCase().replace(/[^a-z0-9]/g,'_').substring(0,30),
-              name: pt.name,
-              cat: cat.name,
-              sub: sub.name,
-              unit: guessUnit(pt.name, pt.attributes),
-              step: 1,
-              base: guessPrice(cat.name, sub.name, pt.attributes),
-              labels: mapLabels(pt.attributes)
+              id:id, name:pt.name, cat:cat.name, sub:sub.name,
+              unit:guessUnit(pt.name,pt.attributes),
+              step:1,
+              base:guessPrice(cat.name,pt.attributes),
+              labels:mapLabels(pt.attributes)
             });
           });
         });
       });
     });
-    // Rebuild VOICE_INDEX with new products
-    PRODUCTS.forEach(function(p){
-      VOICE_INDEX[p.name.toLowerCase()] = p.id;
-    });
-    // Refresh UI
+    PRODUCTS.forEach(function(p){ VOICE_INDEX[p.name.toLowerCase()]=p.id; });
     renderCategories();
     updateItemCount();
-  })
-  .catch(function(e){
-    console.error('taxonomy.json load failed:', e);
-  });
-
-function guessUnit(name, attrs){
-  var n = name.toLowerCase();
-  if(attrs && (attrs.includes('fresh') || attrs.includes('frozen'))){
-    if(n.includes('fillet')||n.includes('steak')||n.includes('breast')||n.includes('mince')||n.includes('kg')) return 'kg';
+    console.log('Taxonomy loaded: '+PRODUCTS.length+' products');
+  } catch(e){
+    console.error('Taxonomy error:',e);
+    loadFallbackProducts();
   }
-  if(n.includes(' l ')||n.includes('milk')||n.includes('juice')||n.includes('water')||n.includes('oil')) return 'L';
-  if(n.includes('tablet')||n.includes('capsule')||n.includes('tab')||n.includes('caps')) return 'pack';
-  if(n.includes('bag')||n.includes('pouch')||n.includes('sachet')) return 'pack';
-  if(n.includes('kg')||n.includes('mince')||n.includes('fillet')) return 'kg';
-  if(n.includes('loaf')||n.includes('bread')) return 'loaf';
-  if(n.includes('bar')||n.includes('chocolate')) return 'bar';
-  if(n.includes('spray')||n.includes('cream')||n.includes('gel')||n.includes('shampoo')) return 'bottle';
-  if(n.includes('box')||n.includes('cereal')||n.includes('granola')) return 'box';
-  if(n.includes('can')||n.includes('canned')) return 'can';
-  if(n.includes('jar')) return 'jar';
-  if(n.includes('roll')) return 'roll';
-  if(n.includes('slice')||n.includes('cake')) return 'pc';
-  return 'pack';
 }
 
-function guessPrice(cat, sub, attrs){
-  var base = {
-    'Fresh Produce': 1.80,
-    'Meat & Poultry': 8.50,
-    'Fish & Seafood': 9.90,
-    'Dairy & Eggs': 2.20,
-    'Bakery': 2.50,
-    'Dry Grocery': 2.00,
-    'Snacks & Confectionery': 2.50,
-    'Beverages': 1.80,
-    'Frozen Foods': 3.50,
-    'Ready Meals & Deli': 4.50,
-    'International Foods': 3.20,
-    'Health, Bio & Special Diet': 6.50,
-    'Baby & Infant Food': 5.50,
-    'Household Cleaning': 3.80,
-    'Personal Care & Beauty': 4.50,
-    'Baby Non-Food': 8.90,
-    'Pet Products': 5.50,
-    'Pharmacy & Wellness': 7.90,
-    'General Merchandise': 6.50
-  }[cat] || 3.00;
-  if(attrs && attrs.includes('premium')) base *= 1.5;
-  if(attrs && attrs.includes('organic')) base *= 1.3;
-  if(attrs && attrs.includes('discount')) base *= 0.75;
-  return Math.round(base * 100) / 100;
+function loadFallbackProducts(){
+  var fallback=[
+    {id:"apple",name:"Apples",cat:"Fresh Produce",sub:"Fresh Fruit",unit:"kg",step:0.5,base:2.20,labels:[]},
+    {id:"banana",name:"Bananas",cat:"Fresh Produce",sub:"Fresh Fruit",unit:"kg",step:0.5,base:1.60,labels:[]},
+    {id:"tomato",name:"Tomatoes",cat:"Fresh Produce",sub:"Fresh Veg",unit:"kg",step:0.5,base:2.40,labels:[]},
+    {id:"potato",name:"Potatoes",cat:"Fresh Produce",sub:"Fresh Veg",unit:"kg",step:0.5,base:1.10,labels:[]},
+    {id:"chicken_br",name:"Chicken breast",cat:"Meat & Poultry",sub:"Poultry",unit:"kg",step:0.5,base:7.80,labels:[]},
+    {id:"salmon",name:"Salmon fillet",cat:"Fish & Seafood",sub:"Fresh Fish",unit:"kg",step:0.5,base:14.90,labels:[]},
+    {id:"milk_wh",name:"Whole milk",cat:"Dairy & Eggs",sub:"Milk",unit:"L",step:1,base:1.05,labels:[]},
+    {id:"eggs_12",name:"Eggs x12",cat:"Dairy & Eggs",sub:"Eggs",unit:"box",step:1,base:2.80,labels:[]},
+    {id:"bread_wh",name:"White bread",cat:"Bakery",sub:"Bread",unit:"loaf",step:1,base:2.10,labels:[]},
+    {id:"pasta_sp",name:"Spaghetti",cat:"Dry Grocery",sub:"Pasta & Rice",unit:"500g",step:1,base:1.40,labels:[]},
+  ];
+  fallback.forEach(function(p){ PRODUCTS.push(p); });
+  renderCategories();
+  updateItemCount();
+}
+
+function guessUnit(name,attrs){
+  var n=name.toLowerCase();
+  if(n.includes('milk')||n.includes('juice')||n.includes('oil')||n.includes('water')||n.includes('cream'))return'L';
+  if(n.includes('fillet')||n.includes('steak')||n.includes('mince')||n.includes('breast')||n.includes('chop'))return'kg';
+  if(n.includes('bread')||n.includes('loaf'))return'loaf';
+  if(n.includes('chocolate')||n.includes('bar'))return'bar';
+  if(n.includes('canned')||n.includes('can'))return'can';
+  if(n.includes('jar'))return'jar';
+  if(n.includes('spray')||n.includes('shampoo')||n.includes('gel')||n.includes('wash'))return'bottle';
+  if(n.includes('tablet')||n.includes('capsule'))return'pack';
+  if(n.includes('bag')||n.includes('pouch'))return'pack';
+  return'pack';
+}
+
+function guessPrice(cat,attrs){
+  var prices={
+    'Fresh Produce':1.80,'Meat & Poultry':8.50,'Fish & Seafood':9.90,
+    'Dairy & Eggs':2.20,'Bakery':2.50,'Dry Grocery':2.00,
+    'Snacks & Confectionery':2.50,'Beverages':1.80,'Frozen Foods':3.50,
+    'Ready Meals & Deli':4.50,'International Foods':3.20,
+    'Health, Bio & Special Diet':6.50,'Baby & Infant Food':5.50,
+    'Household Cleaning':3.80,'Personal Care & Beauty':4.50,
+    'Baby Non-Food':8.90,'Pet Products':5.50,
+    'Pharmacy & Wellness':7.90,'General Merchandise':6.50
+  };
+  var base=prices[cat]||3.00;
+  if(attrs&&attrs.includes('premium'))base*=1.5;
+  if(attrs&&attrs.includes('organic'))base*=1.3;
+  return Math.round(base*100)/100;
 }
 
 function mapLabels(attrs){
-  if(!attrs) return [];
-  var labels = [];
-  if(attrs.includes('organic')) labels.push('bio');
-  if(attrs.includes('vegan')) labels.push('vegan');
-  if(attrs.includes('gluten-free')) labels.push('gluten-free');
-  if(attrs.includes('lactose-free')) labels.push('lactose-free');
-  return labels;
+  if(!attrs)return[];
+  var l=[];
+  if(attrs.includes('organic'))l.push('bio');
+  if(attrs.includes('vegan'))l.push('vegan');
+  if(attrs.includes('gluten-free'))l.push('gluten-free');
+  if(attrs.includes('lactose-free'))l.push('lactose-free');
+  return l;
 }
 
 var CAT_ICONS={"Produce":"🥦","Meat":"🥩","Fish":"🐟","Dairy":"🧀","Bakery":"🥖","Dry Grocery":"🍝","Frozen":"🧊","Beverages":"🥤","Snacks":"🍫","Health":"🌱","Household":"🧼","Personal Care":"🧴","Baby":"👶","Pet":"🐶"};
@@ -747,6 +742,7 @@ var el=document.getElementById(id);if(!el)return;
 el.style.display=el.style.display==="none"?"block":"none";
 el.closest(".store-card").classList.toggle("sel",el.style.display==="block");
 }
+loadTaxonomy();  
 renderCategories();
 updateItemCount();
 </script>
