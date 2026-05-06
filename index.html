@@ -27,13 +27,13 @@
   --blue:#0A84FF;
   --red:#FF453A;
 }
-html{font-size:17px}
+html{font-size:17px;scroll-padding-bottom:130px}
 body{
   background:var(--bg);
   color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Arial,sans-serif;
   min-height:100vh;
-  padding-bottom:90px;
+  padding-bottom:120px;
   line-height:1.5;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
@@ -63,7 +63,7 @@ input,button,select,textarea{
 .progress{height:3px;background:rgba(255,255,255,0.08)}
 .progress-bar{height:100%;background:linear-gradient(90deg,var(--green),var(--blue));transition:width 0.4s ease}
 /* CONTAINER */
-.container{max-width:680px;margin:0 auto;padding:0 16px}
+.container{max-width:680px;margin:0 auto;padding:0 16px 130px}
 /* CARD */
 .card{background:var(--card);border:1px solid var(--border2);border-radius:14px}
 /* BUTTONS */
@@ -245,13 +245,15 @@ div,span,p,h1,h2,h3,label{color:inherit}
 /* ── BOTTOM NAV ── */
 .bottom-nav{
 position:fixed;bottom:0;left:0;right:0;
-background:rgba(17,17,17,0.96);
+background:rgba(17,17,17,0.98);
 border-top:1px solid var(–border2);
 display:flex;
-padding:8px 0 max(8px,env(safe-area-inset-bottom));
-z-index:300;
+padding:10px 0 max(16px,env(safe-area-inset-bottom));
+z-index:9999;
 backdrop-filter:blur(20px);
 -webkit-backdrop-filter:blur(20px);
+touch-action:manipulation;
+-webkit-touch-callout:none;
 }
 .nav-btn{
 flex:1;display:flex;flex-direction:column;
@@ -259,13 +261,17 @@ align-items:center;justify-content:center;
 gap:3px;background:none;border:none;
 color:var(–text3);cursor:pointer;
 font-size:11px;font-weight:500;
-padding:4px 0;min-height:44px;
+padding:6px 0;min-height:52px;
+-webkit-tap-highlight-color:rgba(48,209,200,0.15);
+touch-action:manipulation;
+position:relative;
+z-index:10000;
 }
 .nav-btn.active{color:var(–green)}
 .nav-btn .nav-icon{font-size:22px;line-height:1}
 
 /* ── SCAN TAB ── */
-.scan-step{display:none;padding-top:20px}
+.scan-step{display:none;padding:20px 16px 130px;max-width:680px;margin:0 auto}
 .scan-step.active{display:block}
 .camera-wrap{
 position:relative;background:#000;
@@ -2696,10 +2702,9 @@ function switchMainTab(tab) {
   });
 
   // Add padding for scan/history tabs
-  if (tab !== 'shopper') {
-    mainScan.style.cssText = 'display:' + (tab==='scan'?'block':'none') + ';padding:20px 16px 100px';
-    mainHistory.style.cssText = 'display:' + (tab==='history'?'block':'none') + ';padding:20px 16px 100px';
-  }
+  // padding handled by CSS class, just control display
+  mainScan.style.display = (tab==='scan') ? 'block' : 'none';
+  mainHistory.style.display = (tab==='history') ? 'block' : 'none';
 }
 
 // ── CAMERA SCAN ───────────────────────────────────────────
