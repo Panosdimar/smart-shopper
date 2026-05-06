@@ -2906,7 +2906,7 @@ function renderNutriProduct(p) {
   if (p.quantity) html += '<div style="font-size:13px;color:var(--text3)">' + esc(p.quantity) + '</div>';
   html += '<div style="font-size:11px;color:var(--text3);margin-top:4px">📦 ' + esc(p.code) + '</div>';
   html += '</div>';
-  if (p.image) html += '<img src="' + esc(p.image) + '" style="width:58px;height:58px;object-fit:contain;border-radius:8px;background:var(--card2);flex-shrink:0" onerror="this.style.display='none'">';
+  if (p.image) html += '<img src="' + esc(p.image) + '" style="width:58px;height:58px;object-fit:contain;border-radius:8px;background:var(--card2);flex-shrink:0" onerror="this.style.display=\x27none\x27">';
   html += '</div>';
 
   // Badges row
@@ -2969,8 +2969,8 @@ function renderNutriProduct(p) {
 
   // Add to shopping list button
   html += '<div style="display:flex;gap:8px;margin-top:16px">';
-  html += '<button onclick="addScannedToList('' + esc(p.code) + '','' + esc(p.name.replace(/'/g,"")) + '')" style="flex:1;background:rgba(48,209,200,0.12);border:1px solid rgba(48,209,200,0.25);color:var(--green);border-radius:12px;padding:13px 0;font-size:15px;font-weight:600;cursor:pointer;min-height:50px">🛒 Add to Shopping List</button>';
-  if (navigator.share) html += '<button onclick="shareNutri('' + esc(p.code) + '','' + esc(p.name.replace(/'/g,"")) + '',' + (score||0) + ')" style="background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:12px;padding:13px 16px;font-size:15px;cursor:pointer;min-height:50px">⬆️</button>';
+  html += '<button onclick="addScannedToList(this)" data-code="' + esc(p.code) + '" data-name="' + esc(p.name) + '" style="flex:1;background:rgba(48,209,200,0.12);border:1px solid rgba(48,209,200,0.25);color:var(--green);border-radius:12px;padding:13px 0;font-size:15px;font-weight:600;cursor:pointer;min-height:50px">🛒 Add to Shopping List</button>';
+  html += navigator.share ? '<button onclick="shareNutri(this)" data-code="' + esc(p.code) + '" data-name="' + esc(p.name) + '" data-score="' + (score||0) + '" style="background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:12px;padding:13px 16px;font-size:15px;cursor:pointer;min-height:50px">\u2B06\uFE0F</button>' : '';
   html += '</div>';
 
   html += '<div style="text-align:center;margin-top:12px;font-size:13px;color:var(--text3)"><a href="https://world.openfoodfacts.org/product/' + esc(p.code) + '" target="_blank" style="color:var(--green)">Full details on Open Food Facts →</a></div>';
@@ -3013,20 +3013,27 @@ function buildAnalysis(p) {
 function renderScanHistory() {
   var el = document.getElementById('scanHistoryList');
   if (!scanState.history.length) {
-    el.innerHTML = '<div style="text-align:center;padding:48px 0;color:var(--text3)"><div style="font-size:48px;margin-bottom:16px">📷</div><div style="font-size:19px;font-weight:600;color:var(--text2);margin-bottom:8px">No scans yet</div><div style="font-size:15px">Switch to NutriScan tab and scan a product</div></div>';
+    el.innerHTML = '<div style="text-align:center;padding:48px 0;color:var(--text3)"><div style="font-size:48px;margin-bottom:16px">\uD83D\uDCF7</div><div style="font-size:19px;font-weight:600;color:var(--text2);margin-bottom:8px">No scans yet</div><div style="font-size:15px">Switch to NutriScan and scan a product</div></div>';
     return;
   }
   var html = '';
   scanState.history.forEach(function(item) {
     var col = scoreColor(item.score);
-    html += '<div style="background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="switchMainTab('scan');lookupBarcodeCode(''+esc(item.code)+'')">';
-    if (item.image) html += '<img src="'+esc(item.image)+'" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:var(--card2);flex-shrink:0" onerror="this.style.display='none'">';
-    else html += '<div style="width:44px;height:44px;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📦</div>';
-    html += '<div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(item.name)+'</div>';
-    html += '<div style="font-size:13px;color:var(--text3)">'+(item.brand?esc(item.brand)+' · ':'')+new Date(item.ts).toLocaleDateString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})+'</div></div>';
+    var d = new Date(item.ts).toLocaleDateString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    var nc = {A:'ns-a',B:'ns-b',C:'ns-c',D:'ns-d',E:'ns-e'}[item.ns] || '';
+    html += '<div style="background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="switchMainTab(\'scan\');lookupBarcodeCode(\''+item.code+'\');">';
+    if (item.image) {
+      html += '<img src="'+item.image+'" style="width:44px;height:44px;object-fit:contain;border-radius:8px;background:var(--card2);flex-shrink:0" onerror="this.style.display=\x27none\x27">';
+    } else {
+      html += '<div style="width:44px;height:44px;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">\uD83D\uDCE6</div>';
+    }
+    html += '<div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+item.name+'</div>';
+    html += '<div style="font-size:13px;color:var(--text3)">'+(item.brand?item.brand+' \u00B7 ':'')+d+'</div></div>';
     html += '<div style="text-align:right;flex-shrink:0">';
-    if (item.score!==null) html += '<div style="font-size:17px;font-weight:800;color:'+col+'">'+item.score+'</div>';
-    if (item.ns) { var nc={A:'ns-a',B:'ns-b',C:'ns-c',D:'ns-d',E:'ns-e'}[item.ns]||''; html += '<span class="'+nc+'" style="margin-top:3px">'+item.ns+'</span>'; }
+    if (item.score !== null && item.score !== undefined) {
+      html += '<div style="font-size:17px;font-weight:800;color:'+col+'">'+item.score+'</div>';
+    }
+    if (nc) html += '<span class="'+nc+'">'+item.ns+'</span>';
     html += '</div></div>';
   });
   html += '<button onclick="clearScanHistory()" style="width:100%;background:none;border:1px solid var(--border);color:var(--text3);border-radius:12px;padding:12px;margin-top:8px;cursor:pointer;font-size:15px">Clear history</button>';
@@ -3043,12 +3050,12 @@ function clearScanHistory() {
 // ── HELPERS ───────────────────────────────────────────────
 function showScanResult(html) { document.getElementById('scanResult').innerHTML = html; }
 
-function addScannedToList(code, name) {
+function addScannedToList(btn) { var code=btn.dataset.code; var name=btn.dataset.name;
   showToast('✅ Added to shopping list!');
 }
 
-function shareNutri(code, name, score) {
-  if (!navigator.share) return;
+function shareNutri(btn) { var code=btn.dataset.code; var name=btn.dataset.name; var score=btn.dataset.score;
+  
   navigator.share({title:'NutriScan: '+name, text:name+' — Score: '+score+'/100 | Barcode: '+code, url:'https://world.openfoodfacts.org/product/'+code}).catch(function(){});
 }
 
