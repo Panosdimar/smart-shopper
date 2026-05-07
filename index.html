@@ -2717,71 +2717,136 @@ async function startScan() {
   var statusEl = document.getElementById('scanStatus');
   var labelEl = document.getElementById('scanLabel');
 
-  statusEl.textContent = 'Requesting camera...';
+  statusEl.textContent = 'Starting camera...';
 
-  try {
-    var stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: {ideal:1280}, height: {ideal:720} }
-    });
-
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: 'environment', width: {ideal:1280}, height: {ideal:720} }
+  }).then(function(stream) {
     var video = document.getElementById('scanVideo');
     video.srcObject = stream;
-    await video.play();
-
     scanState.active = true;
     scanState.stream = stream;
     btn.className = 'btn-scan stop';
-    document.getElementById('scanBtnIcon').textContent = '⏹';
+    document.getElementById('scanBtnIcon').textContent = '\u23F9';
     document.getElementById('scanBtnText').textContent = 'Stop Scan';
-    statusEl.textContent = 'Scanning...';
     statusEl.style.color = 'var(--green)';
-    labelEl.textContent = 'Hold steady — point at barcode';
 
-    // Use BarcodeDetector if available (iOS 16+, Chrome)
-    if ('BarcodeDetector' in window) {
-      statusEl.textContent = '✅ BarcodeDetector ready';
-      scanWithBarcodeDetector(video);
-    } else {
-      // Fallback: manual canvas analysis hint
-      statusEl.textContent = 'Camera ready — use manual entry';
-      labelEl.textContent = 'BarcodeDetector not available — type barcode below';
-    }
+    video.play().then(function() {
+      // Try BarcodeDetector first (Chrome/Android)
+      if ('BarcodeDetector' in window) {
+        statusEl.textContent = '\uD83D\uDFE2 Scanning...';
+        labelEl.textContent = 'Point camera at barcode';
+        scanWithBarcodeDetector(video);
+      } else {
+        // Safari fallback: use canvas + ZXing if loaded, else guide user
+        statusEl.textContent = '\uD83D\uDFE2 Camera ready';
+        labelEl.textContent = 'Tap "Capture" to scan barcode';
+        showCaptureButton(video);
+      }
+    });
 
-  } catch(err) {
+  }).catch(function(err) {
     scanState.active = false;
     statusEl.textContent = '';
     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-      showScanResult('<div style="background:rgba(255,69,58,0.08);border:1px solid rgba(255,69,58,0.2);border-radius:13px;padding:16px;color:#FF6961;font-size:15px;line-height:1.6;margin-top:12px"><strong>📷 Camera access denied.</strong><br><br>iPhone: <b>Settings → Safari → Camera → Allow</b><br>Then reload the page.<br><br>Use manual barcode entry below in the meantime.</div>');
+      showScanResult('<div style="background:rgba(255,69,58,0.08);border:1px solid rgba(255,69,58,0.2);border-radius:13px;padding:16px;color:#FF6961;font-size:15px;line-height:1.6;margin-top:12px">\uD83D\uDCF7 <strong>Camera access denied.</strong><br><br>iPhone: <b>Settings \u2192 Safari \u2192 Camera \u2192 Allow</b><br>Then reload the page.</div>');
     } else {
       showScanResult('<div style="background:rgba(255,69,58,0.08);border:1px solid rgba(255,69,58,0.2);border-radius:13px;padding:16px;color:#FF6961;font-size:15px;margin-top:12px">Camera error: ' + err.message + '</div>');
     }
-  }
+    var b = document.getElementById('scanBtn');
+    b.className = 'btn-scan';
+    document.getElementById('scanBtnIcon').textContent = '\uD83D\uDCF7';
+    document.getElementById('scanBtnText').textContent = 'Start Scan';
+  });
 }
 
-function scanWithBarcodeDetector(video) {
-  var detector = new BarcodeDetector({
-    formats: ['ean_13','ean_8','upc_a','upc_e','code_128','code_39','qr_code','data_matrix','itf']
-  });
+function showCaptureButton(video) {
+  // Add a capture button below video for Safari
+  var existing = document.getElementById('captureBtn');
+  if (existing) existing.remove();
+  var btn = document.createElement('button');
+  btn.id = 'captureBtn';
+  btn.textContent = '\uD83D\uDCF8 Capture & Scan';
+  btn.style.cssText = 'width:100%;background:rgba(48,209,200,0.15);border:1px solid rgba(48,209,200,0.3);color:var(--green);border-radius:12px;padding:13px 0;font-size:17px;font-weight:600;cursor:pointer;margin-top:10px;min-height:50px';
+  btn.onclick = function() { captureAndDecode(video); };
+  var wrap = document.getElementById('cameraWrap');
+  wrap.parentNode.insertBefore(btn, wrap.nextSibling.nextSibling);
+}
 
-  function tick() {
-    if (!scanState.active) return;
-    detector.detect(video).then(function(barcodes) {
-      if (barcodes.length > 0 && !scanState.cooldown) {
+function captureAndDecode(video) {
+  var canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
+  var ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  var statusEl = document.getElementById('scanStatus');
+  statusEl.textContent = 'Processing...';
+
+  // Try BarcodeDetector on canvas (some Safari versions support it)
+  if ('BarcodeDetector' in window) {
+    var detector = new BarcodeDetector({
+      formats: ['ean_13','ean_8','upc_a','upc_e','code_128','code_39','qr_code']
+    });
+    detector.detect(canvas).then(function(barcodes) {
+      if (barcodes.length > 0) {
         var code = barcodes[0].rawValue;
-        scanState.cooldown = true;
-        document.getElementById('scanStatus').textContent = '✅ ' + code;
+        statusEl.textContent = '\u2705 Found: ' + code;
         if (navigator.vibrate) navigator.vibrate([80,40,80]);
         stopScan();
         lookupBarcodeCode(code);
-        setTimeout(function(){ scanState.cooldown = false; }, 3000);
-        return;
+      } else {
+        statusEl.textContent = 'No barcode found - try again';
+        setTimeout(function(){ statusEl.textContent = '\uD83D\uDFE2 Camera ready'; }, 1500);
       }
-      requestAnimationFrame(tick);
     }).catch(function() {
-      if (scanState.active) requestAnimationFrame(tick);
+      statusEl.textContent = 'Scan failed - try manual entry';
     });
+  } else {
+    // Use ZXing via dynamic import if available
+    decodeWithZXing(canvas, statusEl);
   }
-  requestAnimationFrame(tick);
+}
+
+function decodeWithZXing(canvas, statusEl) {
+  // Dynamically load ZXing only when needed
+  if (window._zxingReader) {
+    tryZXingDecode(canvas, statusEl);
+    return;
+  }
+  statusEl.textContent = 'Loading scanner...';
+  var script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/@zxing/browser@latest/umd/index.min.js';
+  script.onload = function() {
+    try {
+      window._zxingReader = new ZXingBrowser.BrowserMultiFormatReader();
+      tryZXingDecode(canvas, statusEl);
+    } catch(e) {
+      statusEl.textContent = 'Scanner unavailable - use manual entry';
+    }
+  };
+  script.onerror = function() {
+    statusEl.textContent = 'Offline - use manual entry below';
+  };
+  document.head.appendChild(script);
+}
+
+function tryZXingDecode(canvas, statusEl) {
+  var dataUrl = canvas.toDataURL('image/png');
+  var img = new Image();
+  img.onload = function() {
+    window._zxingReader.decodeFromImageElement(img).then(function(result) {
+      var code = result.getText();
+      statusEl.textContent = '\u2705 Found: ' + code;
+      if (navigator.vibrate) navigator.vibrate([80,40,80]);
+      stopScan();
+      lookupBarcodeCode(code);
+    }).catch(function() {
+      statusEl.textContent = 'No barcode found - try again';
+      setTimeout(function(){ statusEl.textContent = '\uD83D\uDFE2 Camera ready'; }, 1500);
+    });
+  };
+  img.src = dataUrl;
 }
 
 function stopScan() {
