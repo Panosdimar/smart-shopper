@@ -2870,26 +2870,25 @@ function runZXing(canvas, statusEl) {
 function handleBarcodeFound(code) {
   if (!code) return;
 
-  // Αποφυγή διπλών κλήσεων
   if (scanState.cooldown) return;
   scanState.cooldown = true;
-  setTimeout(() => scanState.cooldown = false, 1500);
+  setTimeout(() => { scanState.cooldown = false; }, 1500);
 
   if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
 
   document.getElementById('scanStatus').innerHTML = `✅ <span style="color:#4ade80">${code}</span>`;
   document.getElementById('scanLabel').textContent = 'Found! Loading product...';
 
-  // Σταμάτα αμέσως το scanning
+  // Σταμάτα αμέσως
   stopScan();
 
-  // Lookup μετά από μικρή καθυστέρηση
+  // Κάνε lookup
   setTimeout(() => {
     lookupBarcodeCode(code);
-  }, 300);
+  }, 280);
 }
 
-// ── LIVE BARCODE DETECTOR ─────────────────────────────────
+// ── LIVE DETECTOR ─────────────────────────────────
 async function scanWithBarcodeDetector(video) {
   if (!('BarcodeDetector' in window)) return;
 
@@ -2912,6 +2911,36 @@ async function scanWithBarcodeDetector(video) {
   };
 
   checkBarcode();
+}
+
+// ── STOP SCAN (Διορθωμένο & Ισχυρό) ─────────────────────
+function stopScan() {
+  scanState.active = false;
+
+  if (scanState.stream) {
+    scanState.stream.getTracks().forEach(track => {
+      if (track.readyState === 'live') track.stop();
+    });
+    scanState.stream = null;
+  }
+
+  const video = document.getElementById('scanVideo');
+  if (video) {
+    video.pause();
+    video.srcObject = null;
+  }
+
+  // Επαναφορά UI
+  const btn = document.getElementById('scanBtn');
+  if (btn) {
+    btn.className = 'btn-scan';
+    document.getElementById('scanBtnIcon').textContent = '📷';
+    document.getElementById('scanBtnText').textContent = 'Start Camera';
+  }
+
+  document.getElementById('captureBtn').style.display = 'none';
+  document.getElementById('scanStatus').textContent = '';
+  document.getElementById('scanLabel').textContent = 'Point camera at barcode';
 }
 
 // ── STOP SCAN (Διορθωμένο) ─────────────────────────────────
