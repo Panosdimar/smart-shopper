@@ -2720,52 +2720,56 @@ async function startScan() {
   statusEl.textContent = 'Requesting camera...';
   statusEl.style.color = 'var(--green)';
 
-  navigator.mediaDevices.getUserMedia({
-    video: { facingMode: {ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080} }
-  }).then(function(stream) {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { 
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
+    });
+
     var video = document.getElementById('scanVideo');
     video.srcObject = stream;
     scanState.active = true;
     scanState.stream = stream;
 
+    // Update button
     var btn = document.getElementById('scanBtn');
     btn.className = 'btn-scan stop';
-    btn.style.flex = '1';
-    document.getElementById('scanBtnIcon').textContent = '\u23F9';
-    document.getElementById('scanBtnText').textContent = 'Stop';
+    document.getElementById('scanBtnIcon').textContent = '⏹';
+    document.getElementById('scanBtnText').textContent = 'Stop Scanning';
 
-    video.play().then(function() {
-      statusEl.style.color = 'var(--green)';
+    await video.play();
 
-      if ('BarcodeDetector' in window) {
-        // Chrome/Android — live detection
-        statusEl.textContent = '\uD83D\uDFE2 Scanning live...';
-        labelEl.textContent = 'Hold barcode in frame';
-        if (capBtn) capBtn.style.display = 'none';
-        scanWithBarcodeDetector(video);
-      } else {
-        // Safari iPhone — show Capture button
-        statusEl.textContent = '\uD83D\uDFE2 Ready';
-        labelEl.textContent = 'Hold barcode in frame, then tap Capture';
-        if (capBtn) capBtn.style.display = 'block';
-      }
-    });
+    statusEl.style.color = 'var(--green)';
+    statusEl.textContent = '🔍 Live scanning...';
+    labelEl.textContent = 'Hold barcode steady inside the large frame';
 
-  }).catch(function(err) {
+    // Live detection
+    if ('BarcodeDetector' in window) {
+      scanWithBarcodeDetector(video);           // ← πιο γρήγορο live scan
+    } else {
+      // Safari fallback
+      if (capBtn) capBtn.style.display = 'block';
+      statusEl.textContent = '📸 Ready — tap Capture';
+    }
+
+  } catch (err) {
     scanState.active = false;
-    statusEl.textContent = '';
-    if (capBtn) capBtn.style.display = 'none';
-    var btn = document.getElementById('scanBtn');
-    btn.className = 'btn-scan';
-    document.getElementById('scanBtnIcon').textContent = '\uD83D\uDCF7';
-    document.getElementById('scanBtnText').textContent = 'Start Camera';
+    statusEl.textContent = 'Camera error';
+    console.error(err);
 
     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-      showScanResult('<div style="background:rgba(255,69,58,0.08);border:1px solid rgba(255,69,58,0.2);border-radius:13px;padding:16px;color:#FF6961;font-size:15px;line-height:1.6;margin-top:12px">\uD83D\uDCF7 <strong>Camera blocked.</strong><br><br>iPhone: <b>Settings \u2192 Safari \u2192 Camera \u2192 Allow</b><br>Then reload the page and try again.</div>');
-    } else {
-      showScanResult('<div style="background:rgba(255,69,68,0.08);border:1px solid rgba(255,69,58,0.2);border-radius:13px;padding:16px;color:#FF6961;font-size:15px;margin-top:12px">Camera error: ' + err.message + '</div>');
+      showScanResult(`
+        <div style="background:rgba(255,69,58,0.08);border:1px solid rgba(255,69,58,0.3);border-radius:13px;padding:16px;color:#FF6961;font-size:15px;line-height:1.5">
+          📷 <strong>Camera access blocked.</strong><br><br>
+          iPhone: Settings → Safari → Camera → Allow<br>
+          Then reload the page.
+        </div>
+      `);
     }
-  });
+  }
 }
 
 function doCapture() {
