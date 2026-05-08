@@ -2939,15 +2939,6 @@ function stopScan() {
   document.getElementById('scanStatus').textContent = '';
   document.getElementById('scanLabel').textContent = 'Point camera at barcode';
 }
-      // Σιωπηλή αποτυχία - συνεχίζουμε
-    }
-
-    // Επαναληπτικός έλεγχος κάθε ~180ms
-    setTimeout(checkBarcode, 180);
-  };
-
-  checkBarcode();
-}
 
 // ── LOOKUP ───────────────────────────────────────────────
 function lookupBarcode() {
