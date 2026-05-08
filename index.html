@@ -3180,43 +3180,44 @@ document.addEventListener('visibilitychange', function(){ if(document.hidden&&sc
   </div>
 
   <!-- Camera -->
-
-  <div class="camera-wrap" id="cameraWrap">
+  <div class="camera-wrap" id="cameraWrap" style="max-height:420px; aspect-ratio: 4/3;">
     <video id="scanVideo" playsinline autoplay muted></video>
     <canvas id="scanCanvas" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0"></canvas>
+    
     <div class="scan-overlay">
-      <div class="scan-frame"><div class="scan-line"></div></div>
+      <!-- Μεγαλύτερο και πιο φαρδύ πλαίσιο -->
+      <div class="scan-frame" style="width:92%; height:220px; border:3px solid var(--green); border-radius:16px; box-shadow:0 0 0 9999px rgba(0,0,0,0.65);">
+        <div class="scan-line" style="animation-duration:1.4s;"></div>
+      </div>
     </div>
-    <div class="scan-label" id="scanLabel">Point camera at barcode — tap Capture</div>
+    
+    <div class="scan-label" id="scanLabel" style="font-size:14px; font-weight:500;">Hold barcode inside the large frame</div>
     <div class="scan-status" id="scanStatus"></div>
   </div>
 
-  <div style="display:flex;gap:8px;margin-top:12px">
+  <div style="display:flex;gap:8px;margin-top:14px">
     <button class="btn-scan" id="scanBtn" onclick="toggleScan()" style="flex:1">
       <span id="scanBtnIcon">📷</span>
       <span id="scanBtnText">Start Camera</span>
     </button>
-    <button id="captureBtn" onclick="doCapture()" style="display:none;background:rgba(48,209,200,0.15);border:2px solid var(--green);color:var(--green);border-radius:13px;padding:15px 18px;font-size:17px;font-weight:700;cursor:pointer;min-height:52px;min-width:120px">
+    <button id="captureBtn" onclick="doCapture()" style="display:none;background:rgba(48,209,200,0.15);border:2px solid var(--green);color:var(--green);border-radius:13px;padding:15px 22px;font-size:17px;font-weight:700;cursor:pointer;min-height:52px;">
       📸 Capture
     </button>
   </div>
 
   <!-- Manual entry -->
-
-  <div style="margin-top:16px">
+  <div style="margin-top:18px">
     <div style="font-size:13px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px;font-weight:600">Or enter barcode manually</div>
     <div style="display:flex;gap:8px">
       <input type="number" id="barcodeInput" inputmode="numeric" placeholder="e.g. 4006040194360"
         style="flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;color:var(--text);padding:13px 16px;font-size:17px;outline:none"
         onkeydown="if(event.key==='Enter')lookupBarcode()">
-      <button onclick="lookupBarcode()" style="background:var(--green);color:#000;border:none;border-radius:12px;padding:13px 20px;font-size:17px;font-weight:700;cursor:pointer;min-height:50px">Go</button>
+      <button onclick="lookupBarcode()" style="background:var(--green);color:#000;border:none;border-radius:12px;padding:13px 22px;font-size:17px;font-weight:700;cursor:pointer;min-height:50px">Go</button>
     </div>
-    <div style="font-size:13px;color:var(--text3);margin-top:8px">💡 Try: <span onclick="document.getElementById('barcodeInput').value='4006040194360'" style="color:var(--green);cursor:pointer">4006040194360 (Nutella)</span> or <span onclick="document.getElementById('barcodeInput').value='3017620422003'" style="color:var(--green);cursor:pointer">3017620422003 (Nutella FR)</span></div>
   </div>
 
   <!-- Result -->
-
-  <div id="scanResult" style="margin-top:8px"></div>
+  <div id="scanResult" style="margin-top:12px"></div>
 </div>
 
 <!-- ── HISTORY TAB ── -->
