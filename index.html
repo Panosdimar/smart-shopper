@@ -2867,11 +2867,25 @@ function runZXing(canvas, statusEl) {
 }
 
 function handleBarcodeFound(code) {
+  if (!code) return;
+
+  // Αποφυγή διπλών κλήσεων
+  if (scanState.cooldown) return;
+  scanState.cooldown = true;
+  setTimeout(() => { scanState.cooldown = false; }, 1500);
+
   if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
-  document.getElementById('scanStatus').textContent = '\u2705 ' + code;
+
+  document.getElementById('scanStatus').innerHTML = `✅ <span style="color:#4ade80">${code}</span>`;
   document.getElementById('scanLabel').textContent = 'Found! Loading product...';
+
+  // Σταμάτα το scanning αμέσως
   stopScan();
-  lookupBarcodeCode(code);
+
+  // Κάνε lookup
+  setTimeout(() => {
+    lookupBarcodeCode(code);
+  }, 300);
 }
 
 // ── LOOKUP ───────────────────────────────────────────────
