@@ -2873,7 +2873,20 @@ function handleBarcodeFound(code) {
   if (scanState.cooldown) return;
   scanState.cooldown = true;
   setTimeout(() => { scanState.cooldown = false; }, 1200);
-async function scanWithBarcodeDetector(video) {
+
+  if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+
+  document.getElementById('scanStatus').innerHTML = `✅ <span style="color:#4ade80">${code}</span>`;
+  document.getElementById('scanLabel').textContent = 'Found! Loading product...';
+
+  stopScan();
+
+  setTimeout(() => {
+    lookupBarcodeCode(code);
+  }, 250);
+}
+
+  async function scanWithBarcodeDetector(video) {
   if (!('BarcodeDetector' in window)) return;
 
   const detector = new BarcodeDetector({
