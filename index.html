@@ -2866,27 +2866,30 @@ function runZXing(canvas, statusEl) {
   img.src = canvas.toDataURL('image/png');
 }
 
+// ── HANDLE BARCODE FOUND ─────────────────────────────────
 function handleBarcodeFound(code) {
   if (!code) return;
 
   // Αποφυγή διπλών κλήσεων
   if (scanState.cooldown) return;
   scanState.cooldown = true;
-  setTimeout(() => { scanState.cooldown = false; }, 1500);
+  setTimeout(() => scanState.cooldown = false, 1500);
 
   if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
 
   document.getElementById('scanStatus').innerHTML = `✅ <span style="color:#4ade80">${code}</span>`;
   document.getElementById('scanLabel').textContent = 'Found! Loading product...';
 
-  // Σταμάτα το scanning αμέσως
+  // Σταμάτα αμέσως το scanning
   stopScan();
 
-  // Κάνε lookup
+  // Lookup μετά από μικρή καθυστέρηση
   setTimeout(() => {
     lookupBarcodeCode(code);
   }, 300);
 }
+
+// ── LIVE BARCODE DETECTOR ─────────────────────────────────
 async function scanWithBarcodeDetector(video) {
   if (!('BarcodeDetector' in window)) return;
 
@@ -2900,11 +2903,42 @@ async function scanWithBarcodeDetector(video) {
     try {
       const codes = await detector.detect(video);
       if (codes && codes.length > 0) {
-        const barcode = codes[0].rawValue;
-        handleBarcodeFound(barcode);
+        handleBarcodeFound(codes[0].rawValue);
         return;
       }
-    } catch (err) {
+    } catch (e) {}
+
+    setTimeout(checkBarcode, 160);
+  };
+
+  checkBarcode();
+}
+
+// ── STOP SCAN (Διορθωμένο) ─────────────────────────────────
+function stopScan() {
+  if (scanState.stream) {
+    scanState.stream.getTracks().forEach(track => track.stop());
+    scanState.stream = null;
+  }
+  scanState.active = false;
+
+  const video = document.getElementById('scanVideo');
+  if (video && video.srcObject) {
+    video.srcObject = null;
+  }
+
+  // Επαναφορά κουμπιών
+  const btn = document.getElementById('scanBtn');
+  if (btn) {
+    btn.className = 'btn-scan';
+    document.getElementById('scanBtnIcon').textContent = '📷';
+    document.getElementById('scanBtnText').textContent = 'Start Camera';
+  }
+
+  document.getElementById('captureBtn').style.display = 'none';
+  document.getElementById('scanStatus').textContent = '';
+  document.getElementById('scanLabel').textContent = 'Point camera at barcode';
+}
       // Σιωπηλή αποτυχία - συνεχίζουμε
     }
 
