@@ -2887,6 +2887,33 @@ function handleBarcodeFound(code) {
     lookupBarcodeCode(code);
   }, 300);
 }
+async function scanWithBarcodeDetector(video) {
+  if (!('BarcodeDetector' in window)) return;
+
+  const detector = new BarcodeDetector({
+    formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "itf", "qr_code"]
+  });
+
+  const checkBarcode = async () => {
+    if (!scanState.active) return;
+
+    try {
+      const codes = await detector.detect(video);
+      if (codes && codes.length > 0) {
+        const barcode = codes[0].rawValue;
+        handleBarcodeFound(barcode);
+        return;
+      }
+    } catch (err) {
+      // Σιωπηλή αποτυχία - συνεχίζουμε
+    }
+
+    // Επαναληπτικός έλεγχος κάθε ~180ms
+    setTimeout(checkBarcode, 180);
+  };
+
+  checkBarcode();
+}
 
 // ── LOOKUP ───────────────────────────────────────────────
 function lookupBarcode() {
