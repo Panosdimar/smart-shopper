@@ -2712,6 +2712,46 @@ function toggleScan() {
   if (scanState.active) { stopScan(); } else { startScan(); }
 }
 
+function stopScan() {
+  scanState.active = false;
+  scanState.cooldown = false;
+
+  // Stop all camera tracks
+  if (scanState.stream) {
+    scanState.stream.getTracks().forEach(function(t) {
+      try { t.stop(); } catch(e) {}
+    });
+    scanState.stream = null;
+  }
+
+  // Clear video
+  var video = document.getElementById('scanVideo');
+  if (video) {
+    try { video.pause(); video.srcObject = null; } catch(e) {}
+  }
+
+  // Reset scan button
+  var btn = document.getElementById('scanBtn');
+  if (btn) {
+    btn.className = 'btn-scan';
+    btn.style.flex = '1';
+    var icon = document.getElementById('scanBtnIcon');
+    var txt = document.getElementById('scanBtnText');
+    if (icon) icon.textContent = '\uD83D\uDCF7';
+    if (txt) txt.textContent = 'Start Camera';
+  }
+
+  // Hide capture button
+  var cap = document.getElementById('captureBtn');
+  if (cap) cap.style.display = 'none';
+
+  // Clear status
+  var s = document.getElementById('scanStatus');
+  if (s) s.textContent = '';
+  var lbl = document.getElementById('scanLabel');
+  if (lbl) lbl.textContent = 'Point camera at barcode \u2014 tap Capture';
+}
+
 async function startScan() {
   var statusEl = document.getElementById('scanStatus');
   var labelEl = document.getElementById('scanLabel');
@@ -2863,11 +2903,14 @@ function runZXing(canvas, statusEl) {
 }
 
 function handleBarcodeFound(code) {
+  if (scanState.cooldown) return;
+  scanState.cooldown = true;
   if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
-  document.getElementById('scanStatus').textContent = '\u2705 ' + code;
-  document.getElementById('scanLabel').textContent = 'Found! Loading product...';
   stopScan();
-  lookupBarcodeCode(code);
+  // Small delay to let stopScan fully complete before API call
+  setTimeout(function() {
+    lookupBarcodeCode(code);
+  }, 150);
 }
 
 // ── LOOKUP ───────────────────────────────────────────────
@@ -3123,12 +3166,13 @@ function clearScanHistory() {
 function showScanResult(html) { document.getElementById('scanResult').innerHTML = html; }
 
 function resetScanForNew() {
+  scanState.cooldown = false;
   document.getElementById('scanResult').innerHTML = '';
   document.getElementById('barcodeInput').value = '';
   document.getElementById('scanStatus').textContent = '';
-  document.getElementById('scanLabel').textContent = 'Point camera at barcode — tap Capture';
+  document.getElementById('scanLabel').textContent = 'Point camera at barcode \u2014 tap Capture';
   window.scrollTo(0, 0);
-  showToast('Ready for next scan!');
+  showToast('\uD83D\uDD04 Ready for next scan!');
 }
 
 function addScannedToList(btn) { var code=btn.dataset.code; var name=btn.dataset.name;
