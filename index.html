@@ -355,6 +355,17 @@ justify-content:center;flex-shrink:0;font-weight:800;
 .pw-flag{font-size:11px;background:var(–card2);border-radius:5px;padding:2px 6px;font-weight:600;color:var(–text2)}
 .pw-alert-on{color:#FFD60A}
 .pw-alert-off{color:var(–text3)}
+
+/* ── LANGUAGE SWITCHER ── */
+.lang-switch-btn{
+background:none;border:none;color:var(–text3);
+font-size:12px;font-weight:600;padding:4px 8px;
+border-radius:6px;cursor:pointer;min-height:28px;
+font-family:inherit;
+}
+.lang-switch-btn.active{
+background:var(–green);color:#000;
+}
 </style>
 
 </head>
@@ -3548,6 +3559,479 @@ function pwRender() {
 if (pwState.products.length > 0) {
   // Products loaded from localStorage, render when tab opened
 }
+
+
+
+// ════════════════════════════════════════════════════════════
+// i18n — Translations EN / DE / FR
+// ════════════════════════════════════════════════════════════
+
+var LANG = 'en';
+try { LANG = localStorage.getItem('app_lang') || 'en'; } catch(e) {}
+
+var T = {
+  en: {
+    // Header
+    app_subtitle: 'DE/CH/FR \u00B7 Voice \u00B7 Full Supermarket',
+    restart: '\u21BA',
+    // Nav
+    nav_shopper: 'Shopper',
+    nav_nutriscan: 'NutriScan',
+    nav_history: 'History',
+    nav_price: 'PriceWatch',
+    // Address step
+    where_title: 'Where are you shopping?',
+    where_sub: 'Enter your city \u2014 we find all stores within your radius including cross-border.',
+    saved_location: 'Saved location',
+    use_saved: 'Use saved',
+    city_placeholder: 'Basel / Grenzach-Wyhlen / Freiburg...',
+    go_btn: 'Go',
+    search_radius: 'Search radius',
+    // Basket step
+    shopping_list: 'Shopping List',
+    save_location: 'save location',
+    voice_subtitle: 'Say items in German or English \u2014 Milch, Kartoffeln, Lachs',
+    listening: '\uD83D\uDD34 Listening...',
+    recognising: '\u23F3 Recognising...',
+    items_found: ' items found',
+    voice_idle: '\uD83C\uDFA4 Voice / Text input',
+    no_speech: 'No speech detected. Try again!',
+    or_type: 'Or type: Milch, Eier, Brot, salmon...',
+    find_btn: 'Find',
+    add_all: '+ Add all to list',
+    clear_btn: 'clear',
+    no_match: 'No products matched. Try different words.',
+    search_placeholder: 'Search products... (chicken, bio, gluten-free)',
+    filter_label: 'Filter:',
+    sort_label: 'Sort:',
+    cheapest: '\uD83D\uDCB0 Cheapest',
+    best_offers: '\uD83C\uDFF7 Best offers',
+    nearest: '\uD83D\uDCCD Nearest',
+    find_prices: 'Find Best Prices',
+    // Results
+    stores_found: 'stores',
+    from: 'from',
+    edit_list: '\u2190 Edit list',
+    cross_border: 'Cross-border stores in range',
+    cheaper: '% cheaper',
+    pricier: '% pricier',
+    similar: 'Similar',
+    best_badge: 'BEST',
+    cross_badge: 'CROSS-BORDER',
+    offers_label: 'offers',
+    breakdown: 'Breakdown',
+    total: 'Total',
+    // NutriScan
+    nutriscan_title: '\uD83D\uDCF7 NutriScan',
+    nutriscan_sub: 'Scan any barcode \u2014 instant health score',
+    db_label: 'Database',
+    start_camera: 'Start Camera',
+    stop_btn: 'Stop',
+    capture_btn: '\uD83D\uDCF8 Capture',
+    manual_label: 'Or enter barcode manually',
+    per100g: 'Per 100g',
+    analysis: 'Analysis',
+    allergens: 'Allergens',
+    ingredients: 'Ingredients',
+    add_to_list: '\uD83D\uDED2 Add to Shopping List',
+    scan_another: '\uD83D\uDD04 Scan Another Product',
+    product_not_found: 'Product not found',
+    off_link: 'Full details on Open Food Facts \u2192',
+    // History
+    history_title: '\uD83D\uDD50 Scan History',
+    history_sub: 'Your recently scanned products',
+    no_scans: 'No scans yet',
+    no_scans_sub: 'Switch to NutriScan and scan a product',
+    clear_history: 'Clear history',
+    // PriceWatch
+    pw_title: '\uD83D\uDCB0 PriceWatch',
+    pw_sub: 'Scan & track prices across DE/CH/FR stores',
+    pw_add_label: 'Add product to watch',
+    pw_barcode_ph: 'Barcode number...',
+    pw_add_btn: '+Add',
+    pw_scan_btn: '\uD83D\uDCF7 Scan Barcode to Add',
+    pw_watching: 'Watching',
+    pw_products: 'products',
+    pw_last_update: 'Last updated:',
+    pw_best_deal: '\uD83C\uDFC6 Best deal:',
+    pw_refresh: '\uD83D\uDD04 Refresh prices',
+    pw_save_eur: 'Save EUR',
+    pw_alert_active: 'Alert active: notify when price drops below EUR',
+    pw_added: 'Added',
+    pw_barcode: 'Barcode:',
+    pw_offer: '\uD83C\uDFF7 Special offer this week',
+    pw_empty_title: 'No products yet',
+    pw_empty_sub: 'Add a product by scanning its barcode or entering the number above.',
+    pw_remove_confirm: 'Remove this product from PriceWatch?',
+    pw_alert_set: 'Alert set: notify if price drops below EUR',
+    pw_alert_removed: 'Price alert removed',
+    pw_removed: 'Removed from PriceWatch',
+    pw_already: 'Already watching this product',
+    pw_looking: 'Looking up product...',
+    pw_not_found: 'Product not found in database',
+    pw_added_toast: 'Added: ',
+    pw_scan_toast: 'Scan barcode \u2014 result will be added to PriceWatch',
+    // Misc
+    allow_micro: 'Microphone blocked.',
+    iphone_micro: 'iPhone: Settings \u2192 Safari \u2192 Camera \u2192 Allow',
+    no_barcode: 'No barcode found \u2014 try again',
+    found_loading: 'Found! Loading product...',
+    camera_ready: 'Point camera at barcode \u2014 tap Capture',
+    ready_next: '\uD83D\uDD04 Ready for next scan!',
+    enter_barcode: 'Enter a barcode number first',
+    germany: '\uD83C\uDDE9\uD83C\uDDEA Germany',
+    switzerland: '\uD83C\uDDE8\uD83C\uDDED Switzerland',
+    france: '\uD83C\uDDEB\uD83C\uDDF7 France',
+  },
+
+  de: {
+    app_subtitle: 'DE/CH/FR \u00B7 Spracheingabe \u00B7 Vollsortimenter',
+    restart: '\u21BA',
+    nav_shopper: 'Einkauf',
+    nav_nutriscan: 'NutriScan',
+    nav_history: 'Verlauf',
+    nav_price: 'Preisvergleich',
+    where_title: 'Wo kaufen Sie ein?',
+    where_sub: 'Stadt eingeben \u2014 wir finden alle Superm\u00e4rkte in Ihrer N\u00e4he, auch grenznah.',
+    saved_location: 'Gespeicherter Standort',
+    use_saved: 'Verwenden',
+    city_placeholder: 'Basel / Grenzach-Wyhlen / Freiburg...',
+    go_btn: 'Los',
+    search_radius: 'Suchradius',
+    shopping_list: 'Einkaufsliste',
+    save_location: 'Standort speichern',
+    voice_subtitle: 'Auf Deutsch oder Englisch sprechen \u2014 Milch, Kartoffeln, Lachs',
+    listening: '\uD83D\uDD34 H\u00f6rt zu...',
+    recognising: '\u23F3 Wird erkannt...',
+    items_found: ' Artikel gefunden',
+    voice_idle: '\uD83C\uDFA4 Sprach- / Texteingabe',
+    no_speech: 'Keine Sprache erkannt. Nochmals versuchen!',
+    or_type: 'Oder tippen: Milch, Eier, Brot, Lachs...',
+    find_btn: 'Suchen',
+    add_all: '+ Alle zur Liste hinzuf\u00fcgen',
+    clear_btn: 'L\u00f6schen',
+    no_match: 'Keine Produkte gefunden. Andere W\u00f6rter versuchen.',
+    search_placeholder: 'Produkte suchen... (H\u00e4hnchen, Bio, glutenfrei)',
+    filter_label: 'Filter:',
+    sort_label: 'Sortieren:',
+    cheapest: '\uD83D\uDCB0 G\u00fcnstigste',
+    best_offers: '\uD83C\uDFF7 Beste Angebote',
+    nearest: '\uD83D\uDCCD N\u00e4chste',
+    find_prices: 'Beste Preise finden',
+    stores_found: 'M\u00e4rkte',
+    from: 'von',
+    edit_list: '\u2190 Liste bearbeiten',
+    cross_border: 'Grenznahe M\u00e4rkte in der N\u00e4he',
+    cheaper: '% g\u00fcnstiger',
+    pricier: '% teurer',
+    similar: '\u00c4hnlich',
+    best_badge: 'BESTES',
+    cross_badge: 'GRENZHANDEL',
+    offers_label: 'Angebote',
+    breakdown: 'Aufschl\u00fcsselung',
+    total: 'Gesamt',
+    nutriscan_title: '\uD83D\uDCF7 NutriScan',
+    nutriscan_sub: 'Barcode scannen \u2014 sofortige Gesundheitsbewertung',
+    db_label: 'Datenbank',
+    start_camera: 'Kamera starten',
+    stop_btn: 'Stopp',
+    capture_btn: '\uD83D\uDCF8 Aufnehmen',
+    manual_label: 'Oder Barcode manuell eingeben',
+    per100g: 'Pro 100g',
+    analysis: 'Analyse',
+    allergens: 'Allergene',
+    ingredients: 'Zutaten',
+    add_to_list: '\uD83D\uDED2 Zur Einkaufsliste hinzuf\u00fcgen',
+    scan_another: '\uD83D\uDD04 Weiteres Produkt scannen',
+    product_not_found: 'Produkt nicht gefunden',
+    off_link: 'Vollst\u00e4ndige Details auf Open Food Facts \u2192',
+    history_title: '\uD83D\uDD50 Scanverlauf',
+    history_sub: 'Zuletzt gescannte Produkte',
+    no_scans: 'Noch keine Scans',
+    no_scans_sub: 'Wechseln Sie zu NutriScan und scannen Sie ein Produkt',
+    clear_history: 'Verlauf l\u00f6schen',
+    pw_title: '\uD83D\uDCB0 Preisvergleich',
+    pw_sub: 'Preise in DE/CH/FR Superm\u00e4rkten scannen & verfolgen',
+    pw_add_label: 'Produkt zur Beobachtung hinzuf\u00fcgen',
+    pw_barcode_ph: 'Barcodenummer...',
+    pw_add_btn: '+Hinzuf\u00fcgen',
+    pw_scan_btn: '\uD83D\uDCF7 Barcode scannen',
+    pw_watching: 'Beobachte',
+    pw_products: 'Produkte',
+    pw_last_update: 'Letzte Aktualisierung:',
+    pw_best_deal: '\uD83C\uDFC6 Bestes Angebot:',
+    pw_refresh: '\uD83D\uDD04 Preise aktualisieren',
+    pw_save_eur: 'Sparen EUR',
+    pw_alert_active: 'Alarm aktiv: Benachrichtigung wenn Preis f\u00e4llt unter EUR',
+    pw_added: 'Hinzugef\u00fcgt',
+    pw_barcode: 'Barcode:',
+    pw_offer: '\uD83C\uDFF7 Sonderangebot diese Woche',
+    pw_empty_title: 'Noch keine Produkte',
+    pw_empty_sub: 'F\u00fcgen Sie ein Produkt hinzu, indem Sie den Barcode scannen.',
+    pw_remove_confirm: 'Dieses Produkt aus dem Preisvergleich entfernen?',
+    pw_alert_set: 'Alarm gesetzt: Benachrichtigung wenn Preis f\u00e4llt unter EUR',
+    pw_alert_removed: 'Preisalarm entfernt',
+    pw_removed: 'Aus dem Preisvergleich entfernt',
+    pw_already: 'Dieses Produkt wird bereits beobachtet',
+    pw_looking: 'Produkt wird gesucht...',
+    pw_not_found: 'Produkt nicht in der Datenbank gefunden',
+    pw_added_toast: 'Hinzugef\u00fcgt: ',
+    pw_scan_toast: 'Barcode scannen \u2014 wird automatisch zum Preisvergleich hinzugef\u00fcgt',
+    allow_micro: 'Mikrofonzugriff verweigert.',
+    iphone_micro: 'iPhone: Einstellungen \u2192 Safari \u2192 Kamera \u2192 Erlauben',
+    no_barcode: 'Kein Barcode gefunden \u2014 erneut versuchen',
+    found_loading: 'Gefunden! Produkt wird geladen...',
+    camera_ready: 'Kamera auf Barcode richten \u2014 Aufnehmen tippen',
+    ready_next: '\uD83D\uDD04 Bereit f\u00fcr den n\u00e4chsten Scan!',
+    enter_barcode: 'Bitte zuerst eine Barcodenummer eingeben',
+    germany: '\uD83C\uDDE9\uD83C\uDDEA Deutschland',
+    switzerland: '\uD83C\uDDE8\uD83C\uDDED Schweiz',
+    france: '\uD83C\uDDEB\uD83C\uDDF7 Frankreich',
+  },
+
+  fr: {
+    app_subtitle: 'DE/CH/FR \u00B7 Voix \u00B7 Supermarch\u00e9 complet',
+    restart: '\u21BA',
+    nav_shopper: 'Courses',
+    nav_nutriscan: 'NutriScan',
+    nav_history: 'Historique',
+    nav_price: 'ComparaPrix',
+    where_title: 'O\u00f9 faites-vous vos courses\u00a0?',
+    where_sub: 'Entrez votre ville \u2014 nous trouvons tous les magasins dans votre rayon, y compris transfrontaliers.',
+    saved_location: 'Lieu enregistr\u00e9',
+    use_saved: 'Utiliser',
+    city_placeholder: 'Bale / Grenzach-Wyhlen / Fribourg...',
+    go_btn: 'OK',
+    search_radius: 'Rayon de recherche',
+    shopping_list: 'Liste de courses',
+    save_location: 'Enregistrer le lieu',
+    voice_subtitle: 'Dites les articles en allemand ou anglais \u2014 Milch, Kartoffeln, Lachs',
+    listening: '\uD83D\uDD34 En \u00e9coute...',
+    recognising: '\u23F3 Reconnaissance...',
+    items_found: ' articles trouv\u00e9s',
+    voice_idle: '\uD83C\uDFA4 Saisie vocale / textuelle',
+    no_speech: 'Aucune parole d\u00e9tect\u00e9e. R\u00e9essayez\u00a0!',
+    or_type: 'Ou tapez: Milch, Eier, Brot, saumon...',
+    find_btn: 'Chercher',
+    add_all: '+ Tout ajouter \u00e0 la liste',
+    clear_btn: 'Effacer',
+    no_match: 'Aucun produit trouv\u00e9. Essayez d\u2019autres mots.',
+    search_placeholder: 'Rechercher des produits... (poulet, bio, sans gluten)',
+    filter_label: 'Filtrer\u00a0:',
+    sort_label: 'Trier\u00a0:',
+    cheapest: '\uD83D\uDCB0 Moins cher',
+    best_offers: '\uD83C\uDFF7 Meilleures offres',
+    nearest: '\uD83D\uDCCD Plus proche',
+    find_prices: 'Trouver les meilleurs prix',
+    stores_found: 'magasins',
+    from: 'de',
+    edit_list: '\u2190 Modifier la liste',
+    cross_border: 'Magasins transfrontaliers \u00e0 port\u00e9e',
+    cheaper: '% moins cher',
+    pricier: '% plus cher',
+    similar: 'Similaire',
+    best_badge: 'MEILLEUR',
+    cross_badge: 'TRANSFRONTALIER',
+    offers_label: 'offres',
+    breakdown: 'D\u00e9tail',
+    total: 'Total',
+    nutriscan_title: '\uD83D\uDCF7 NutriScan',
+    nutriscan_sub: 'Scannez un code-barres \u2014 score sant\u00e9 instantan\u00e9',
+    db_label: 'Base de donn\u00e9es',
+    start_camera: 'D\u00e9marrer la cam\u00e9ra',
+    stop_btn: 'Arr\u00eater',
+    capture_btn: '\uD83D\uDCF8 Capturer',
+    manual_label: 'Ou saisir le code-barres manuellement',
+    per100g: 'Pour 100g',
+    analysis: 'Analyse',
+    allergens: 'Allerg\u00e8nes',
+    ingredients: 'Ingr\u00e9dients',
+    add_to_list: '\uD83D\uDED2 Ajouter \u00e0 la liste',
+    scan_another: '\uD83D\uDD04 Scanner un autre produit',
+    product_not_found: 'Produit introuvable',
+    off_link: 'D\u00e9tails complets sur Open Food Facts \u2192',
+    history_title: '\uD83D\uDD50 Historique des scans',
+    history_sub: 'Vos produits r\u00e9cemment scann\u00e9s',
+    no_scans: 'Aucun scan pour l\u2019instant',
+    no_scans_sub: 'Allez sur NutriScan et scannez un produit',
+    clear_history: 'Effacer l\u2019historique',
+    pw_title: '\uD83D\uDCB0 ComparaPrix',
+    pw_sub: 'Scannez et comparez les prix dans les magasins DE/CH/FR',
+    pw_add_label: 'Ajouter un produit \u00e0 surveiller',
+    pw_barcode_ph: 'Num\u00e9ro de code-barres...',
+    pw_add_btn: '+Ajouter',
+    pw_scan_btn: '\uD83D\uDCF7 Scanner le code-barres',
+    pw_watching: 'Surveillance de',
+    pw_products: 'produits',
+    pw_last_update: 'Derni\u00e8re mise \u00e0 jour\u00a0:',
+    pw_best_deal: '\uD83C\uDFC6 Meilleure offre\u00a0:',
+    pw_refresh: '\uD83D\uDD04 Actualiser les prix',
+    pw_save_eur: 'Economisez EUR',
+    pw_alert_active: 'Alerte active\u00a0: notifier si le prix descend sous EUR',
+    pw_added: 'Ajout\u00e9 le',
+    pw_barcode: 'Code-barres\u00a0:',
+    pw_offer: '\uD83C\uDFF7 Offre sp\u00e9ciale cette semaine',
+    pw_empty_title: 'Aucun produit pour l\u2019instant',
+    pw_empty_sub: 'Ajoutez un produit en scannant son code-barres ou en saisissant le num\u00e9ro.',
+    pw_remove_confirm: 'Retirer ce produit de ComparaPrix\u00a0?',
+    pw_alert_set: 'Alerte d\u00e9finie\u00a0: notifier si le prix descend sous EUR',
+    pw_alert_removed: 'Alerte de prix supprim\u00e9e',
+    pw_removed: 'Retir\u00e9 de ComparaPrix',
+    pw_already: 'Ce produit est d\u00e9j\u00e0 surveill\u00e9',
+    pw_looking: 'Recherche du produit...',
+    pw_not_found: 'Produit introuvable dans la base de donn\u00e9es',
+    pw_added_toast: 'Ajout\u00e9\u00a0: ',
+    pw_scan_toast: 'Scannez le code-barres \u2014 le r\u00e9sultat sera ajout\u00e9 \u00e0 ComparaPrix',
+    allow_micro: 'Acc\u00e8s au microphone refus\u00e9.',
+    iphone_micro: 'iPhone\u00a0: R\u00e9glages \u2192 Safari \u2192 Cam\u00e9ra \u2192 Autoriser',
+    no_barcode: 'Aucun code-barres trouv\u00e9 \u2014 r\u00e9essayez',
+    found_loading: 'Trouv\u00e9\u00a0! Chargement du produit...',
+    camera_ready: 'Pointez la cam\u00e9ra sur le code-barres \u2014 appuyez sur Capturer',
+    ready_next: '\uD83D\uDD04 Pr\u00eat pour le prochain scan\u00a0!',
+    enter_barcode: 'Veuillez d\u2019abord saisir un num\u00e9ro de code-barres',
+    germany: '\uD83C\uDDE9\uD83C\uDDEA Allemagne',
+    switzerland: '\uD83C\uDDE8\uD83C\uDDED Suisse',
+    france: '\uD83C\uDDEB\uD83C\uDDF7 France',
+  }
+};
+
+// Shorthand translate function
+function t(key) {
+  return (T[LANG] && T[LANG][key]) || T['en'][key] || key;
+}
+
+function setLang(lang) {
+  LANG = lang;
+  try { localStorage.setItem('app_lang', lang); } catch(e) {}
+  // Update nav buttons
+  ['EN','DE','FR'].forEach(function(l) {
+    var btn = document.getElementById('lang' + l);
+    if (btn) btn.classList.toggle('active', l.toLowerCase() === lang);
+  });
+  applyTranslations();
+}
+
+function applyTranslations() {
+  // Header subtitle
+  var sub = document.querySelector('.header span[style*="font-size:11px"]');
+  if (sub) sub.textContent = t('app_subtitle');
+
+  // Nav buttons
+  var navMap = {navShopper:'nav_shopper', navScan:'nav_nutriscan', navHistory:'nav_history', navPrice:'nav_price'};
+  Object.keys(navMap).forEach(function(id) {
+    var btn = document.getElementById(id);
+    if (btn) {
+      var spans = btn.querySelectorAll('span');
+      if (spans[1]) spans[1].textContent = t(navMap[id]);
+    }
+  });
+
+  // Address step
+  var wt = document.querySelector('#stepAddress h2');
+  if (wt) wt.textContent = t('where_title');
+  var ws = document.querySelector('#stepAddress p');
+  if (ws) ws.textContent = t('where_sub');
+  var addrInp = document.getElementById('addrInput');
+  if (addrInp) addrInp.placeholder = t('city_placeholder');
+
+  // Radius label
+  var rl = document.querySelector('.card span[style*="font-weight:600"]');
+  if (rl) rl.textContent = t('search_radius');
+
+  // Basket step
+  var sl = document.querySelector('#stepBasket > div > div > span[style*="font-weight:700"]');
+  if (sl) sl.textContent = t('shopping_list');
+  var saveBtn = document.querySelector('[onclick="saveLoc()"]');
+  if (saveBtn) saveBtn.textContent = t('save_location');
+
+  // Voice card
+  var vt = document.getElementById('voiceTitle');
+  if (vt && vt.textContent.indexOf('\uD83C\uDFA4') >= 0) vt.textContent = t('voice_idle');
+  var vs = document.getElementById('voiceSubtitle');
+  if (vs) vs.textContent = t('voice_subtitle');
+
+  // Quick input placeholder
+  var qi = document.getElementById('quickInput');
+  if (qi) qi.placeholder = t('or_type');
+  var findBtn = document.querySelector('[onclick="processText()"]');
+  if (findBtn) findBtn.textContent = t('find_btn');
+
+  // Search placeholder
+  var si = document.getElementById('searchInput');
+  if (si) si.placeholder = t('search_placeholder');
+
+  // Filter label
+  var fl = document.querySelector('.filter-btn')
+    && document.querySelector('.filter-btn').previousElementSibling;
+
+  // Sort label
+  var sortBtns = document.querySelectorAll('.sort-btn');
+  if (sortBtns[0]) sortBtns[0].textContent = t('cheapest');
+  if (sortBtns[1]) sortBtns[1].textContent = t('best_offers');
+  if (sortBtns[2]) sortBtns[2].textContent = t('nearest');
+
+  // Analyze button
+  var ab = document.getElementById('analyzeBtn');
+  if (ab) {
+    var km = ab.textContent.match(/\d+/);
+    ab.textContent = t('find_prices') + (km ? ' \u2014 ' + km[0] + ' km' : '');
+  }
+
+  // NutriScan tab
+  var nt = document.querySelector('#mainScan > div > div[style*="font-size:20px"]');
+  if (nt) nt.textContent = t('nutriscan_title');
+  var ns2 = document.querySelector('#mainScan > div > div[style*="font-size:13px"]');
+  if (ns2) ns2.textContent = t('nutriscan_sub');
+  var scanLbl = document.getElementById('scanLabel');
+  if (scanLbl) scanLbl.textContent = t('camera_ready');
+  var scanBtnTxt = document.getElementById('scanBtnText');
+  if (scanBtnTxt && scanBtnTxt.textContent === 'Start Camera') scanBtnTxt.textContent = t('start_camera');
+  var capBtn = document.getElementById('captureBtn');
+  if (capBtn) capBtn.textContent = t('capture_btn');
+
+  // History tab
+  var ht = document.querySelector('#mainHistory > div > div[style*="font-size:20px"]');
+  if (ht) ht.textContent = t('history_title');
+  var hs = document.querySelector('#mainHistory > div > div[style*="font-size:13px"]');
+  if (hs) hs.textContent = t('history_sub');
+
+  // PriceWatch tab
+  var pt = document.querySelector('#mainPrice > div > div[style*="font-size:20px"]');
+  if (pt) pt.textContent = t('pw_title');
+  var ps = document.querySelector('#mainPrice > div > div[style*="font-size:13px"]');
+  if (ps) ps.textContent = t('pw_sub');
+  var pwInp = document.getElementById('pwBarcodeInput');
+  if (pwInp) pwInp.placeholder = t('pw_barcode_ph');
+
+  // PriceWatch empty state
+  var pwEt = document.querySelector('#pwEmpty div[style*="font-size:19px"]');
+  if (pwEt) pwEt.textContent = t('pw_empty_title');
+  var pwEs = document.querySelector('#pwEmpty div[style*="font-size:15px"]');
+  if (pwEs) pwEs.textContent = t('pw_empty_sub');
+
+  // Re-render dynamic sections if visible
+  if (document.getElementById('mainHistory') &&
+      document.getElementById('mainHistory').style.display !== 'none') {
+    renderScanHistory();
+  }
+  if (document.getElementById('mainPrice') &&
+      document.getElementById('mainPrice').style.display !== 'none') {
+    pwRender();
+  }
+}
+
+// Apply saved language on load
+(function() {
+  // Update lang buttons
+  ['EN','DE','FR'].forEach(function(l) {
+    var btn = document.getElementById('lang' + l);
+    if (btn) btn.classList.toggle('active', l.toLowerCase() === LANG);
+  });
+  if (LANG !== 'en') {
+    // Defer to after DOM is ready
+    setTimeout(applyTranslations, 100);
+  }
+})();
 
 </script>
 
