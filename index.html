@@ -376,7 +376,12 @@ background:var(–green);color:#000;
   <div style="flex:1">
     <h1>Smart Shopper <span style="font-size:11px;color:var(--muted);font-weight:400">DE/CH/FR · Voice · Full Supermarket</span></h1>
   </div>
-  <button class="btn-outline" onclick="restart()" id="restartBtn" style="display:none">↺ Restart</button>
+  <button class="btn-outline" onclick="restart()" id="restartBtn" style="display:none">↺</button>
+  <div style="display:flex;gap:2px;background:rgba(255,255,255,0.08);border-radius:8px;padding:2px;margin-left:4px">
+    <button id="langEN" onclick="setLang('en')" style="background:var(--green);color:#000;border:none;border-radius:6px;font-size:12px;font-weight:700;padding:5px 9px;cursor:pointer;font-family:inherit;min-height:30px">EN</button>
+    <button id="langDE" onclick="setLang('de')" style="background:none;color:var(--text3);border:none;border-radius:6px;font-size:12px;font-weight:600;padding:5px 9px;cursor:pointer;font-family:inherit;min-height:30px">DE</button>
+    <button id="langFR" onclick="setLang('fr')" style="background:none;color:var(--text3);border:none;border-radius:6px;font-size:12px;font-weight:600;padding:5px 9px;cursor:pointer;font-family:inherit;min-height:30px">FR</button>
+  </div>
 </div>
 <div class="progress"><div class="progress-bar" id="progressBar" style="width:10%"></div></div>
 
@@ -3903,12 +3908,21 @@ function t(key) {
 function setLang(lang) {
   LANG = lang;
   try { localStorage.setItem('app_lang', lang); } catch(e) {}
-  // Update nav buttons
   ['EN','DE','FR'].forEach(function(l) {
     var btn = document.getElementById('lang' + l);
-    if (btn) btn.classList.toggle('active', l.toLowerCase() === lang);
+    if (!btn) return;
+    if (l.toLowerCase() === lang) {
+      btn.style.background = 'var(--green)';
+      btn.style.color = '#000';
+      btn.style.fontWeight = '700';
+    } else {
+      btn.style.background = 'none';
+      btn.style.color = 'var(--text3)';
+      btn.style.fontWeight = '600';
+    }
   });
   applyTranslations();
+  showToast(lang === 'de' ? 'Sprache: Deutsch' : lang === 'fr' ? 'Langue: Fran\u00e7ais' : 'Language: English');
 }
 
 function applyTranslations() {
@@ -4022,15 +4036,22 @@ function applyTranslations() {
 
 // Apply saved language on load
 (function() {
-  // Update lang buttons
-  ['EN','DE','FR'].forEach(function(l) {
-    var btn = document.getElementById('lang' + l);
-    if (btn) btn.classList.toggle('active', l.toLowerCase() === LANG);
-  });
-  if (LANG !== 'en') {
-    // Defer to after DOM is ready
-    setTimeout(applyTranslations, 100);
-  }
+  setTimeout(function() {
+    ['EN','DE','FR'].forEach(function(l) {
+      var btn = document.getElementById('lang' + l);
+      if (!btn) return;
+      if (l.toLowerCase() === LANG) {
+        btn.style.background = 'var(--green)';
+        btn.style.color = '#000';
+        btn.style.fontWeight = '700';
+      } else {
+        btn.style.background = 'none';
+        btn.style.color = 'var(--text3)';
+        btn.style.fontWeight = '600';
+      }
+    });
+    if (LANG !== 'en') applyTranslations();
+  }, 100);
 })();
 
 </script>
