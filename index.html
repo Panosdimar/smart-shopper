@@ -1208,35 +1208,54 @@ function analyze() {
   ranked.forEach(function(s,i) {
     var isBest = i===0 && state.sortBy==='total';
     var cross = s.flag !== state.loc.flag;
-    html += '<div class="store-card'+(isBest?' best':'')+'" onclick="toggleBreakdown(\'bd_'+s.id+'\')">';
+
+    html += '<div class="store-card'+(isBest?' best':'')+'" onclick="toggleBreakdown('bd_'+s.id+'')">';
     html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">';
-    html += '<div style="flex:1"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">';
+    html += '<div style="flex:1">';
+    html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">';
     if (isBest) html += '<span style="background:rgba(48,209,200,0.15);color:var(--green);border-radius:5px;padding:1px 6px;font-size:9px;font-weight:700">BEST</span>';
     if (cross) html += '<span style="background:rgba(10,132,255,0.12);color:#60a5fa;border-radius:5px;padding:1px 6px;font-size:9px;font-weight:700">CROSS-BORDER</span>';
-    html += '<span style="font-size:14px;font-weight:700;color:var(--text)">'+s.flag+' '+s.name+'</span></div>';
-    html += '<div style="font-size:11px;color:var(--text3)">'+s.distKm+' km · '+s.note+'</div></div>';
+    html += '<span style="font-size:14px;font-weight:700;color:var(--text)">'+s.flag+' '+s.name+'</span>';
+    html += '</div>';
+    html += '<div style="font-size:11px;color:var(--text3)">'+s.distKm+' km &middot; '+s.note+'</div>';
+    html += '</div>';
     html += '<div style="text-align:right;flex-shrink:0">';
     html += '<div style="font-size:17px;font-weight:800;color:'+(isBest?'var(--green)':'var(--text2)')+'">EUR '+s.total.toFixed(2)+'</div>';
     if (s.saved>0.01) html += '<div style="font-size:11px;color:#4ade80">-EUR '+s.saved.toFixed(2)+'</div>';
-    html += '<div style="font-size:10px;color:var(--text3)">'+s.lines.filter(function(l){return l.hasOffer;}).length+'/'+s.lines.length+' offers</div></div></div>';
+    html += '<div style="font-size:10px;color:var(--text3)">'+s.lines.filter(function(l){return l.hasOffer;}).length+'/'+s.lines.length+' offers</div>';
+    html += '</div>';
+    html += '</div>';
+
+    // Breakdown (hidden by default)
     html += '<div id="bd_'+s.id+'" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border2)">';
     html += '<div style="font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Breakdown</div>';
     s.lines.forEach(function(line) {
-      html += '<div class="breakdown-row"><div style="flex:1"><span style="font-size:12px;color:'+(line.hasOffer?'var(--green)':'var(--text2)')+'">'+line.displayName+'</span>';
-      html += '<span style="font-size:10px;color:var(--text3);margin-left:4px">×'+line.qty+' '+line.unit+'</span>';
-      if (line.hasOffer) html += '<span style="margin-left:5px;font-size:9px;color:var(--green);background:rgba(48,209,200,0.1);border-radius:4px;padding:1px 5px">-'+line.saving+'%</span>';
-      html += '<div style="font-size:9px;color:var(--text3);margin-top:1px">EUR '+line.price.toFixed(2)+'/'+line.unit+'</div></div>';
-      html += '<div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--text)">EUR '+line.line.toFixed(2)+'</div></div></div>';
+      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px">';
+      html += '<div style="flex:1">';
+      html += '<span style="font-size:13px;color:'+(line.hasOffer?'var(--green)':'var(--text2)')+'">'+line.displayName+'</span>';
+      html += ' <span style="font-size:11px;color:var(--text3)">x'+line.qty+' '+line.unit+'</span>';
+      if (line.hasOffer) html += ' <span style="font-size:10px;color:var(--green);background:rgba(48,209,200,0.1);border-radius:4px;padding:1px 5px">-'+line.saving+'%</span>';
+      if (pricesLoaded && realPrices[line.id+'_'+s.id]) html += ' <span style="font-size:10px;color:#30D158">✅ Real</span>';
+      html += '<div style="font-size:10px;color:var(--text3)">EUR '+line.price.toFixed(2)+'/'+line.unit+'</div>';
+      html += '</div>';
+      html += '<span style="font-size:13px;font-weight:700;color:var(--text)">EUR '+line.line.toFixed(2)+'</span>';
+      html += '</div>';
     });
-    html += '<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:7px;border-top:1px solid var(--border2)"><span style="font-size:12px;color:var(--text3)">Total</span><span style="font-size:15px;font-weight:800;color:var(--green)">EUR '+s.total.toFixed(2)+'</span></div>';
+    html += '<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border2)">';
+    html += '<span style="font-size:13px;color:var(--text3)">Total</span>';
+    html += '<span style="font-size:16px;font-weight:800;color:var(--green)">EUR '+s.total.toFixed(2)+'</span>';
+    html += '</div>';
+    // Community report button
     html += '<button onclick="event.stopPropagation();showReportModal(this)" data-sid="'+s.id+'" data-sname="'+s.name+'" data-sflag="'+s.flag+'" style="width:100%;background:rgba(255,214,10,0.07);border:1px solid rgba(255,214,10,0.15);color:#FFD60A;border-radius:10px;padding:10px 0;font-size:13px;font-weight:600;cursor:pointer;margin-top:10px">👁 I saw a different price here</button>';
-    html += '</div></div>';
+    html += '</div>';
+    html += '</div>';
   });
 
   document.getElementById('resultsList').innerHTML = html;
   showStep('results');
   maybeShowNewsletter();
 }
+
 
 function toggleBreakdown(id) {
   var el = document.getElementById(id); if (!el) return;
