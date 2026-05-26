@@ -327,15 +327,7 @@ input[type=range]{accent-color:var(--green);width:100%;cursor:pointer}
   <div id="resultsHeader" style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;padding:14px 0 9px"></div>
   <div id="resultsList"></div>
   <div style="font-size:10px;color:var(--text3);text-align:center;margin:8px 0">Prices: index baseline + weekly offers</div>
-  <div style="background:rgba(48,209,200,0.06);border:1px solid rgba(48,209,200,0.15);border-radius:14px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px">
-    <span style="font-size:28px">📧</span>
-    <div style="flex:1">
-      <div style="font-size:15px;font-weight:600">Get weekly deals</div>
-      <div style="font-size:13px;color:#A1A1A6">Best prices every Monday — free newsletter</div>
-    </div>
-    <button onclick="showNewsletter()" style="background:#30D1C8;color:#000;border:none;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap">Subscribe</button>
-  </div>
-  <button onclick="goBack()" id="editListBtn"   style="width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--border2);color:var(--text3);border-radius:11px;padding:12px;cursor:pointer;font-size:13px">← Edit list</button>
+  <button onclick="goBack()" id="editListBtn" style="width:100%;background:rgba(255,255,255,0.03);border:1px solid var(--border2);color:var(--text3);border-radius:11px;padding:12px;cursor:pointer;font-size:13px">← Edit list</button>
 </div>
 
 </div><!-- /container -->
@@ -381,38 +373,6 @@ input[type=range]{accent-color:var(--green);width:100%;cursor:pointer}
     <div style="font-size:13px;color:var(--text3);margin-top:2px" id="historySub">Your recently scanned products</div>
   </div>
   <div id="scanHistoryList"></div>
-</div>
-
-<!-- NEWSLETTER MODAL -->
-
-<div id="newsletterModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:none;align-items:flex-end;justify-content:center">
-  <div style="background:#1C1C1E;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:680px">
-    <div style="font-size:20px;font-weight:700;margin-bottom:6px">📧 Weekly Deals Newsletter</div>
-    <div style="font-size:14px;color:#A1A1A6;margin-bottom:18px">Get the best cross-border deals every Monday — free!</div>
-    <input type="email" id="newsletterEmail" placeholder="your@email.com" style="width:100%;background:#2C2C2E;border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:#f5f5f7;padding:14px 16px;font-size:16px;outline:none;margin-bottom:10px">
-    <div style="display:flex;gap:8px">
-      <button onclick="submitNewsletter()" style="flex:1;background:#30D1C8;color:#000;border:none;border-radius:12px;padding:14px 0;font-size:16px;font-weight:700;cursor:pointer">Subscribe Free</button>
-      <button onclick="closeNewsletter()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#A1A1A6;border-radius:12px;padding:14px 16px;font-size:14px;cursor:pointer">Later</button>
-    </div>
-    <div id="newsletterStatus" style="font-size:13px;text-align:center;margin-top:10px;min-height:18px"></div>
-  </div>
-</div>
-
-<!-- PRICE REPORT MODAL -->
-
-<div id="reportModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:flex-end;justify-content:center">
-  <div style="background:#1C1C1E;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:680px">
-    <div style="font-size:18px;font-weight:700;margin-bottom:4px">👁 Report a Price</div>
-    <div style="font-size:13px;color:#A1A1A6;margin-bottom:16px" id="reportStoreLabel"></div>
-    <label style="font-size:13px;color:#A1A1A6;display:block;margin-bottom:6px">Product</label>
-    <input type="text" id="reportProduct" placeholder="e.g. Salmon Fillet" style="width:100%;background:#2C2C2E;border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:#f5f5f7;padding:13px 16px;font-size:16px;outline:none;margin-bottom:10px">
-    <label style="font-size:13px;color:#A1A1A6;display:block;margin-bottom:6px">Price you saw (EUR)</label>
-    <input type="number" id="reportPriceInput" placeholder="e.g. 3.99" step="0.01" style="width:100%;background:#2C2C2E;border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:#f5f5f7;padding:13px 16px;font-size:16px;outline:none;margin-bottom:16px">
-    <div style="display:flex;gap:8px">
-      <button onclick="submitReport()" style="flex:1;background:#FFD60A;color:#000;border:none;border-radius:12px;padding:14px 0;font-size:16px;font-weight:700;cursor:pointer">Send Report</button>
-      <button onclick="closeReport()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#A1A1A6;border-radius:12px;padding:14px 16px;font-size:14px;cursor:pointer">Cancel</button>
-    </div>
-  </div>
 </div>
 
 <!-- PRICEWATCH TAB -->
@@ -1208,54 +1168,32 @@ function analyze() {
   ranked.forEach(function(s,i) {
     var isBest = i===0 && state.sortBy==='total';
     var cross = s.flag !== state.loc.flag;
-
-    html += '<div class="store-card'+(isBest?' best':'')+'" onclick="toggleBreakdown('bd_'+s.id+'')">';
+    html += '<div class="store-card'+(isBest?' best':'')+'" onclick="toggleBreakdown(\'bd_'+s.id+'\')">';
     html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">';
-    html += '<div style="flex:1">';
-    html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">';
+    html += '<div style="flex:1"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">';
     if (isBest) html += '<span style="background:rgba(48,209,200,0.15);color:var(--green);border-radius:5px;padding:1px 6px;font-size:9px;font-weight:700">BEST</span>';
     if (cross) html += '<span style="background:rgba(10,132,255,0.12);color:#60a5fa;border-radius:5px;padding:1px 6px;font-size:9px;font-weight:700">CROSS-BORDER</span>';
-    html += '<span style="font-size:14px;font-weight:700;color:var(--text)">'+s.flag+' '+s.name+'</span>';
-    html += '</div>';
-    html += '<div style="font-size:11px;color:var(--text3)">'+s.distKm+' km &middot; '+s.note+'</div>';
-    html += '</div>';
+    html += '<span style="font-size:14px;font-weight:700;color:var(--text)">'+s.flag+' '+s.name+'</span></div>';
+    html += '<div style="font-size:11px;color:var(--text3)">'+s.distKm+' km · '+s.note+'</div></div>';
     html += '<div style="text-align:right;flex-shrink:0">';
     html += '<div style="font-size:17px;font-weight:800;color:'+(isBest?'var(--green)':'var(--text2)')+'">EUR '+s.total.toFixed(2)+'</div>';
     if (s.saved>0.01) html += '<div style="font-size:11px;color:#4ade80">-EUR '+s.saved.toFixed(2)+'</div>';
-    html += '<div style="font-size:10px;color:var(--text3)">'+s.lines.filter(function(l){return l.hasOffer;}).length+'/'+s.lines.length+' offers</div>';
-    html += '</div>';
-    html += '</div>';
-
-    // Breakdown (hidden by default)
+    html += '<div style="font-size:10px;color:var(--text3)">'+s.lines.filter(function(l){return l.hasOffer;}).length+'/'+s.lines.length+' offers</div></div></div>';
     html += '<div id="bd_'+s.id+'" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border2)">';
     html += '<div style="font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Breakdown</div>';
     s.lines.forEach(function(line) {
-      html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px">';
-      html += '<div style="flex:1">';
-      html += '<span style="font-size:13px;color:'+(line.hasOffer?'var(--green)':'var(--text2)')+'">'+line.displayName+'</span>';
-      html += ' <span style="font-size:11px;color:var(--text3)">x'+line.qty+' '+line.unit+'</span>';
-      if (line.hasOffer) html += ' <span style="font-size:10px;color:var(--green);background:rgba(48,209,200,0.1);border-radius:4px;padding:1px 5px">-'+line.saving+'%</span>';
-      if (pricesLoaded && realPrices[line.id+'_'+s.id]) html += ' <span style="font-size:10px;color:#30D158">✅ Real</span>';
-      html += '<div style="font-size:10px;color:var(--text3)">EUR '+line.price.toFixed(2)+'/'+line.unit+'</div>';
-      html += '</div>';
-      html += '<span style="font-size:13px;font-weight:700;color:var(--text)">EUR '+line.line.toFixed(2)+'</span>';
-      html += '</div>';
+      html += '<div class="breakdown-row"><div style="flex:1"><span style="font-size:12px;color:'+(line.hasOffer?'var(--green)':'var(--text2)')+'">'+line.displayName+'</span>';
+      html += '<span style="font-size:10px;color:var(--text3);margin-left:4px">×'+line.qty+' '+line.unit+'</span>';
+      if (line.hasOffer) html += '<span style="margin-left:5px;font-size:9px;color:var(--green);background:rgba(48,209,200,0.1);border-radius:4px;padding:1px 5px">-'+line.saving+'%</span>';
+      html += '<div style="font-size:9px;color:var(--text3);margin-top:1px">EUR '+line.price.toFixed(2)+'/'+line.unit+'</div></div>';
+      html += '<div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--text)">EUR '+line.line.toFixed(2)+'</div></div></div>';
     });
-    html += '<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border2)">';
-    html += '<span style="font-size:13px;color:var(--text3)">Total</span>';
-    html += '<span style="font-size:16px;font-weight:800;color:var(--green)">EUR '+s.total.toFixed(2)+'</span>';
-    html += '</div>';
-    // Community report button
-    html += '<button onclick="event.stopPropagation();showReportModal(this)" data-sid="'+s.id+'" data-sname="'+s.name+'" data-sflag="'+s.flag+'" style="width:100%;background:rgba(255,214,10,0.07);border:1px solid rgba(255,214,10,0.15);color:#FFD60A;border-radius:10px;padding:10px 0;font-size:13px;font-weight:600;cursor:pointer;margin-top:10px">👁 I saw a different price here</button>';
-    html += '</div>';
-    html += '</div>';
+    html += '<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:7px;border-top:1px solid var(--border2)"><span style="font-size:12px;color:var(--text3)">Total</span><span style="font-size:15px;font-weight:800;color:var(--green)">EUR '+s.total.toFixed(2)+'</span></div></div></div>';
   });
 
   document.getElementById('resultsList').innerHTML = html;
   showStep('results');
-  maybeShowNewsletter();
 }
-
 
 function toggleBreakdown(id) {
   var el = document.getElementById(id); if (!el) return;
@@ -1730,142 +1668,6 @@ function clearPaste() {
   document.getElementById('waPasteResult').style.display = 'none';
   document.getElementById('waPasteNoMatch').style.display = 'none';
   pastedPids = [];
-}
-
-
-// ═══════════════════════════════════════════════════
-// SUPABASE — Real prices, community reports, email leads
-// ═══════════════════════════════════════════════════
-var SB_URL = 'https://wwepapdmmfzwfwjpwsbm.supabase.co';
-var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3ZXBhcGRtbWZ6d2Z3anB3c2JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMDg4MjYsImV4cCI6MjA5NDc4NDgyNn0.VP8fgjws23f_Th_mBa6u5iBu2Q5J39MtvRQA6f169q4';
-var SB_HDR = {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
-
-async function sbGet(path) {
-  try {
-    var r = await fetch(SB_URL+'/rest/v1/'+path, {headers:SB_HDR});
-    return r.ok ? r.json() : [];
-  } catch(e) { return []; }
-}
-
-async function sbPost(path, body) {
-  try {
-    var r = await fetch(SB_URL+'/rest/v1/'+path, {method:'POST',headers:SB_HDR,body:JSON.stringify(body)});
-    return r.ok;
-  } catch(e) { return false; }
-}
-
-// Cache real prices from Supabase
-var realPrices = {};
-var pricesLoaded = false;
-
-async function loadRealPrices() {
-  var today = new Date().toISOString().split('T')[0];
-  var data = await sbGet('prices?select=*&valid_until=gte.'+today+'&order=created_at.desc');
-  realPrices = {};
-  data.forEach(function(p) {
-    var key = p.product_id + '_' + p.store_id;
-    if (!realPrices[key]) realPrices[key] = p; // keep latest
-  });
-  pricesLoaded = true;
-  console.log('Loaded '+data.length+' real prices from Supabase');
-}
-
-// Override calcItem to use real prices when available
-var _origCalcItem = calcItem;
-function calcItem(pid, store) {
-  var key = pid + '_' + store.id;
-  if (pricesLoaded && realPrices[key]) {
-    var rp = realPrices[key];
-    var base = parseFloat(rp.price);
-    return {price:base, basePrice:base, src:'✅ Real', conf:1.0, saving:0, hasOffer:true};
-  }
-  return _origCalcItem(pid, store);
-}
-
-// Submit community price report
-async function reportPrice(pid, pname, storeId, storeName, storeFlag, price) {
-  var city = (window.state && state.loc) ? state.loc.city : '';
-  var ok = await sbPost('price_reports', {
-    product_id:pid, product_name:pname,
-    store_id:storeId, store_name:storeName, store_flag:storeFlag,
-    price:price, user_city:city
-  });
-  showToast(ok ? '✅ Thank you! Price reported!' : '⚠️ Could not submit report');
-}
-
-// Email lead capture
-async function submitEmail(email, city) {
-  var lang = typeof LANG !== 'undefined' ? LANG : 'en';
-  return sbPost('email_leads', {email:email, city:city, lang:lang, source:'app'});
-}
-
-// Load prices on startup
-loadRealPrices();
-
-
-// ═══════════════════════════════════════════════════
-// MODALS — Newsletter + Price Report
-// ═══════════════════════════════════════════════════
-var _reportStore = {};
-
-function showReportModal(btn) {
-  var storeId = btn.dataset.sid;
-  var storeName = btn.dataset.sname;
-  var storeFlag = btn.dataset.sflag;
-  _reportStore = {id:storeId, name:storeName, flag:storeFlag};
-  document.getElementById('reportStoreLabel').textContent = storeFlag + ' ' + storeName;
-  document.getElementById('reportProduct').value = '';
-  document.getElementById('reportPriceInput').value = '';
-  var m = document.getElementById('reportModal');
-  m.style.display = 'flex';
-}
-
-function closeReport() {
-  document.getElementById('reportModal').style.display = 'none';
-}
-
-async function submitReport() {
-  var product = document.getElementById('reportProduct').value.trim();
-  var price = parseFloat(document.getElementById('reportPriceInput').value);
-  if (!product || !price) { showToast('Please fill in all fields'); return; }
-  var pid = product.toLowerCase().replace(/[^a-z0-9]+/g,'_');
-  await reportPrice(pid, product, _reportStore.id, _reportStore.name, _reportStore.flag, price);
-  closeReport();
-}
-
-function showNewsletter() {
-  document.getElementById('newsletterModal').style.display = 'flex';
-}
-
-function closeNewsletter() {
-  document.getElementById('newsletterModal').style.display = 'none';
-  try { localStorage.setItem('nl_dismissed','1'); } catch(e) {}
-}
-
-async function submitNewsletter() {
-  var email = document.getElementById('newsletterEmail').value.trim();
-  var statusEl = document.getElementById('newsletterStatus');
-  if (!email || !email.includes('@')) { statusEl.textContent = '⚠️ Enter a valid email'; statusEl.style.color='#FF453A'; return; }
-  var city = (state.loc && state.loc.city) ? state.loc.city : '';
-  var ok = await submitEmail(email, city);
-  if (ok) {
-    statusEl.textContent = '✅ Subscribed! See you Monday 🎉';
-    statusEl.style.color = '#30D158';
-    setTimeout(closeNewsletter, 2000);
-    try { localStorage.setItem('nl_subscribed','1'); } catch(e) {}
-  } else {
-    statusEl.textContent = '❌ Error — try again';
-    statusEl.style.color = '#FF453A';
-  }
-}
-
-// Show newsletter after first price comparison (once)
-function maybeShowNewsletter() {
-  try {
-    if (!localStorage.getItem('nl_dismissed') && !localStorage.getItem('nl_subscribed')) {
-      setTimeout(showNewsletter, 3000);
-    }
-  } catch(e) {}
 }
 
 // ═══════════════════════════════════════════════════
