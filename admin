@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Shopper — Admin</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a0a;color:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,sans-serif;padding:20px;max-width:680px;margin:0 auto}
+h1{font-size:22px;font-weight:700;margin-bottom:4px;color:#30D1C8}
+.sub{font-size:13px;color:#6E6E73;margin-bottom:24px}
+.card{background:#1C1C1E;border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px;margin-bottom:16px}
+.card h2{font-size:15px;font-weight:600;margin-bottom:14px;color:#A1A1A6;text-transform:uppercase;letter-spacing:1px}
+label{font-size:13px;color:#A1A1A6;display:block;margin-bottom:5px;margin-top:12px}
+input,select{width:100%;background:#2C2C2E;border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#f5f5f7;padding:12px 14px;font-size:16px;outline:none;font-family:inherit}
+input::placeholder{color:#6E6E73}
+.btn{background:#30D1C8;color:#000;border:none;border-radius:12px;padding:14px 0;font-size:16px;font-weight:700;cursor:pointer;width:100%;margin-top:16px}
+.btn-red{background:#FF453A;color:#fff}
+.btn-outline{background:rgba(48,209,200,0.1);border:1px solid rgba(48,209,200,0.3);color:#30D1C8}
+.status{padding:12px 14px;border-radius:10px;font-size:14px;margin-top:12px;display:none}
+.status.ok{background:rgba(48,209,88,0.1);border:1px solid rgba(48,209,88,0.3);color:#30D158}
+.status.err{background:rgba(255,69,58,0.1);border:1px solid rgba(255,69,58,0.3);color:#FF453A}
+.prices-list{margin-top:14px}
+.price-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:14px}
+.price-row:last-child{border-bottom:none}
+.badge{background:rgba(48,209,200,0.15);color:#30D1C8;border-radius:6px;padding:2px 8px;font-size:12px;font-weight:600}
+.badge-fr{background:rgba(10,132,255,0.15);color:#0A84FF}
+.badge-ch{background:rgba(255,159,10,0.15);color:#FF9F0A}
+.tabs{display:flex;gap:8px;margin-bottom:20px}
+.tab{flex:1;background:#1C1C1E;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 0;text-align:center;cursor:pointer;font-size:14px;font-weight:600;color:#6E6E73}
+.tab.active{background:rgba(48,209,200,0.12);border-color:rgba(48,209,200,0.3);color:#30D1C8}
+.reports-list{margin-top:14px}
+.report-row{background:#2C2C2E;border-radius:10px;padding:12px;margin-bottom:8px;font-size:14px}
+.report-meta{font-size:12px;color:#6E6E73;margin-top:4px}
+.btn-sm{background:rgba(48,209,88,0.15);border:1px solid rgba(48,209,88,0.3);color:#30D158;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;font-weight:600}
+.btn-sm-red{background:rgba(255,69,58,0.1);border:1px solid rgba(255,69,58,0.3);color:#FF453A;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer}
+.leads-list{margin-top:14px}
+.lead-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);font-size:14px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+.stat{background:#1C1C1E;border-radius:12px;padding:14px;text-align:center}
+.stat-n{font-size:28px;font-weight:800;color:#30D1C8}
+.stat-l{font-size:12px;color:#6E6E73;margin-top:2px}
+</style>
+</head>
+<body>
+
+<h1>🛒 Smart Shopper Admin</h1>
+<div class="sub">Price management & community reports</div>
+
+<!-- STATS -->
+
+<div class="stat-grid">
+<div class="stat"><div class="stat-n" id="statPrices">—</div><div class="stat-l">Prices</div></div>
+<div class="stat"><div class="stat-n" id="statReports">—</div><div class="stat-l">Reports</div></div>
+<div class="stat"><div class="stat-n" id="statLeads">—</div><div class="stat-l">Email leads</div></div>
+</div>
+
+<!-- TABS -->
+
+<div class="tabs">
+<div class="tab active" onclick="showTab('prices')">💰 Prices</div>
+<div class="tab" onclick="showTab('reports')">👥 Community</div>
+<div class="tab" onclick="showTab('leads')">📧 Leads</div>
+</div>
+
+<!-- PRICES TAB -->
+
+<div id="tabPrices">
+<div class="card">
+<h2>➕ Add / Update Price</h2>
+<label>Product ID (from app)</label>
+<input type="text" id="prodId" placeholder="e.g. salmon_fillet">
+<label>Product Name</label>
+<input type="text" id="prodName" placeholder="e.g. Salmon Fillet">
+<label>Store</label>
+<select id="storeSelect">
+<option value="lidl_de|Lidl|DE">🇩🇪 Lidl DE</option>
+<option value="aldi_de|Aldi|DE">🇩🇪 Aldi DE</option>
+<option value="rewe_de|Rewe|DE">🇩🇪 Rewe DE</option>
+<option value="edeka_de|Edeka|DE">🇩🇪 Edeka DE</option>
+<option value="penny_de|Penny|DE">🇩🇪 Penny DE</option>
+<option value="kaufland_de|Kaufland|DE">🇩🇪 Kaufland DE</option>
+<option value="hiebers_de|Hieber's|DE">🇩🇪 Hieber's DE</option>
+<option value="alnatura_de|Alnatura|DE">🇩🇪 Alnatura DE</option>
+<option value="dm_de|dm Drogerie|DE">🇩🇪 dm Drogerie DE</option>
+<option value="rossmann_de|Rossmann|DE">🇩🇪 Rossmann DE</option>
+<option value="migros_ch|Migros|CH">🇨🇭 Migros CH</option>
+<option value="coop_ch|Coop|CH">🇨🇭 Coop CH</option>
+<option value="lidl_ch|Lidl CH|CH">🇨🇭 Lidl CH</option>
+<option value="aldi_ch|Aldi CH|CH">🇨🇭 Aldi CH</option>
+<option value="denner_ch|Denner|CH">🇨🇭 Denner CH</option>
+<option value="leclerc_fr|E.Leclerc|FR">🇫🇷 E.Leclerc FR</option>
+<option value="carrefour_fr|Carrefour|FR">🇫🇷 Carrefour FR</option>
+<option value="lidl_fr|Lidl FR|FR">🇫🇷 Lidl FR</option>
+<option value="grand_frais|Grand Frais|FR">🇫🇷 Grand Frais FR</option>
+<option value="biocoop_fr|Biocoop|FR">🇫🇷 Biocoop FR</option>
+</select>
+<label>Price (EUR)</label>
+<input type="number" id="priceInput" placeholder="e.g. 3.99" step="0.01" min="0">
+<label>Unit</label>
+<select id="unitSelect">
+<option value="kg">kg</option>
+<option value="pcs">pcs</option>
+<option value="L">L</option>
+<option value="pack">pack</option>
+</select>
+<label>Valid until</label>
+<input type="date" id="validUntil">
+<button class="btn" onclick="submitPrice()">💾 Save Price</button>
+<div class="status" id="priceStatus"></div>
+</div>
+
+<div class="card">
+<h2>📋 Recent Prices</h2>
+<div class="prices-list" id="pricesList">Loading...</div>
+</div>
+</div>
+
+<!-- REPORTS TAB -->
+
+<div id="tabReports" style="display:none">
+<div class="card">
+<h2>👥 Community Price Reports</h2>
+<p style="font-size:13px;color:#6E6E73;margin-bottom:10px">These are prices submitted by users. Review and confirm accurate ones.</p>
+<div class="reports-list" id="reportsList">Loading...</div>
+</div>
+</div>
+
+<!-- LEADS TAB -->
+
+<div id="tabLeads" style="display:none">
+<div class="card">
+<h2>📧 Newsletter Leads</h2>
+<div class="leads-list" id="leadsList">Loading...</div>
+<button class="btn btn-outline" style="margin-top:12px" onclick="exportLeads()">⬇️ Export CSV</button>
+</div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://wwepapdmmfzwfwjpwsbm.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3ZXBhcGRtbWZ6d2Z3anB3c2JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMDg4MjYsImV4cCI6MjA5NDc4NDgyNn0.VP8fgjws23f_Th_mBa6u5iBu2Q5J39MtvRQA6f169q4';
+
+const headers = {
+'Content-Type': 'application/json',
+'apikey': SUPABASE_KEY,
+'Authorization': 'Bearer ' + SUPABASE_KEY
+};
+
+async function api(path, method='GET', body=null) {
+const opts = { method, headers };
+if (body) opts.body = JSON.stringify(body);
+const r = await fetch(SUPABASE_URL + '/rest/v1/' + path, opts);
+if (!r.ok) { const e = await r.text(); throw new Error(e); }
+return method === 'GET' ? r.json() : r;
+}
+
+// Set default valid_until to next Sunday
+const nextSun = new Date();
+nextSun.setDate(nextSun.getDate() + (7 - nextSun.getDay()));
+document.getElementById('validUntil').value = nextSun.toISOString().split('T')[0];
+
+async function loadStats() {
+try {
+const [p, r, l] = await Promise.all([
+api('prices?select=id'),
+api('price_reports?select=id'),
+api('email_leads?select=id')
+]);
+document.getElementById('statPrices').textContent = p.length;
+document.getElementById('statReports').textContent = r.length;
+document.getElementById('statLeads').textContent = l.length;
+} catch(e) { console.error(e); }
+}
+
+async function loadPrices() {
+try {
+const data = await api('prices?select=*&order=created_at.desc&limit=50');
+const el = document.getElementById('pricesList');
+if (!data.length) { el.innerHTML = '<div style="color:#6E6E73;font-size:13px">No prices yet. Add your first price above!</div>'; return; }
+el.innerHTML = data.map(p => {
+const flagClass = p.store_flag==='CH'?'badge-ch':p.store_flag==='FR'?'badge-fr':'';
+return `<div class="price-row">
+<div>
+<div style="font-weight:600">${p.product_name}</div>
+<div style="font-size:12px;color:#6E6E73">${p.store_name} · until ${p.valid_until}</div>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<span class="badge ${flagClass}">${p.store_flag}</span>
+<span style="font-weight:700;color:#30D1C8">EUR ${parseFloat(p.price).toFixed(2)}</span>
+<button class="btn-sm-red" onclick="deletePrice(${p.id})">✕</button>
+</div>
+</div>`;
+}).join('');
+} catch(e) { document.getElementById('pricesList').innerHTML = '<div style="color:#FF453A">Error loading prices</div>'; }
+}
+
+async function submitPrice() {
+const pid = document.getElementById('prodId').value.trim();
+const pname = document.getElementById('prodName').value.trim();
+const storeVal = document.getElementById('storeSelect').value.split('|');
+const price = parseFloat(document.getElementById('priceInput').value);
+const unit = document.getElementById('unitSelect').value;
+const validUntil = document.getElementById('validUntil').value;
+const statusEl = document.getElementById('priceStatus');
+
+if (!pid || !pname || !price || !validUntil) {
+statusEl.textContent = '⚠️ Fill in all fields!';
+statusEl.className = 'status err'; statusEl.style.display = 'block'; return;
+}
+
+try {
+await api('prices', 'POST', {
+product_id: pid, product_name: pname,
+store_id: storeVal[0], store_name: storeVal[1], store_flag: storeVal[2],
+price: price, unit: unit, valid_until: validUntil, source: 'admin'
+});
+statusEl.textContent = '✅ Price saved!';
+statusEl.className = 'status ok'; statusEl.style.display = 'block';
+document.getElementById('prodId').value = '';
+document.getElementById('prodName').value = '';
+document.getElementById('priceInput').value = '';
+setTimeout(() => { statusEl.style.display='none'; }, 2000);
+loadPrices(); loadStats();
+} catch(e) {
+statusEl.textContent = '❌ Error: ' + e.message;
+statusEl.className = 'status err'; statusEl.style.display = 'block';
+}
+}
+
+async function deletePrice(id) {
+if (!confirm('Delete this price?')) return;
+try {
+await api('prices?id=eq.' + id, 'DELETE');
+loadPrices(); loadStats();
+} catch(e) { alert('Error: ' + e.message); }
+}
+
+async function loadReports() {
+try {
+const data = await api('price_reports?select=*&order=created_at.desc&limit=50');
+const el = document.getElementById('reportsList');
+if (!data.length) { el.innerHTML = '<div style="color:#6E6E73;font-size:13px">No community reports yet.</div>'; return; }
+el.innerHTML = data.map(r => `
+<div class="report-row">
+<div style="display:flex;justify-content:space-between;align-items:flex-start">
+<div>
+<div style="font-weight:600">${r.product_name}</div>
+<div class="report-meta">${r.store_name} (${r.store_flag}) · EUR ${parseFloat(r.price).toFixed(2)} · ${new Date(r.created_at).toLocaleDateString('en-GB')}</div>
+${r.user_city?`<div class="report-meta">📍 ${r.user_city}</div>`:''}
+</div>
+<div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px">
+<button class="btn-sm" onclick="approveReport(${r.id})">✓ Approve</button>
+<button class="btn-sm-red" onclick="deleteReport(${r.id})">✕</button>
+</div>
+</div>
+</div>`).join('');
+} catch(e) { document.getElementById('reportsList').innerHTML = '<div style="color:#FF453A">Error</div>'; }
+}
+
+async function approveReport(id) {
+// Get report and copy to prices table
+try {
+const reports = await api('price_reports?id=eq.' + id + '&select=*');
+const r = reports[0];
+await api('prices', 'POST', {
+product_id: r.product_id, product_name: r.product_name,
+store_id: r.store_id, store_name: r.store_name, store_flag: r.store_flag,
+price: r.price, unit: r.unit, source: 'community'
+});
+await api('price_reports?id=eq.' + id, 'DELETE');
+loadReports(); loadPrices(); loadStats();
+alert('✅ Approved and added to prices!');
+} catch(e) { alert('Error: ' + e.message); }
+}
+
+async function deleteReport(id) {
+if (!confirm('Delete this report?')) return;
+try { await api('price_reports?id=eq.' + id, 'DELETE'); loadReports(); loadStats(); }
+catch(e) { alert('Error: ' + e.message); }
+}
+
+async function loadLeads() {
+try {
+const data = await api('email_leads?select=*&order=created_at.desc');
+const el = document.getElementById('leadsList');
+if (!data.length) { el.innerHTML = '<div style="color:#6E6E73;font-size:13px">No email leads yet.</div>'; return; }
+el.innerHTML = data.map(l => `
+<div class="lead-row">
+<div>
+<div style="font-weight:600">${l.email}</div>
+<div style="font-size:12px;color:#6E6E73">${l.city||'—'} · ${l.lang} · ${new Date(l.created_at).toLocaleDateString('en-GB')}</div>
+</div>
+<span style="font-size:11px;color:#6E6E73">${l.source}</span>
+</div>`).join('');
+} catch(e) { document.getElementById('leadsList').innerHTML = '<div style="color:#FF453A">Error</div>'; }
+}
+
+async function exportLeads() {
+try {
+const data = await api('email_leads?select=*&order=created_at.desc');
+const csv = 'email,city,lang,source,date\n' + data.map(l =>
+`${l.email},${l.city||''},${l.lang},${l.source},${l.created_at}`
+).join('\n');
+const blob = new Blob([csv], {type:'text/csv'});
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a'); a.href=url; a.download='leads.csv'; a.click();
+} catch(e) { alert('Error: ' + e.message); }
+}
+
+function showTab(tab) {
+['prices','reports','leads'].forEach(t => {
+document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).style.display = t===tab?'block':'none';
+});
+document.querySelectorAll('.tab').forEach((el,i) => {
+el.classList.toggle('active', ['prices','reports','leads'][i]===tab);
+});
+if (tab==='reports') loadReports();
+if (tab==='leads') loadLeads();
+}
+
+// Init
+loadStats();
+loadPrices();
+</script>
+
+</body>
+</html>
