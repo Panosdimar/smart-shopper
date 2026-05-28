@@ -68,47 +68,87 @@ input::placeholder{color:#6E6E73}
 
 <div id="tabPrices">
   <div class="card">
-    <h2>➕ Add / Update Price</h2>
-    <label>Product ID (from app)</label>
-    <input type="text" id="prodId" placeholder="e.g. salmon_fillet">
-    <label>Product Name</label>
-    <input type="text" id="prodName" placeholder="e.g. Salmon Fillet">
-    <label>Store</label>
-    <select id="storeSelect">
-      <option value="lidl_de|Lidl|DE">🇩🇪 Lidl DE</option>
-      <option value="aldi_de|Aldi|DE">🇩🇪 Aldi DE</option>
-      <option value="rewe_de|Rewe|DE">🇩🇪 Rewe DE</option>
-      <option value="edeka_de|Edeka|DE">🇩🇪 Edeka DE</option>
-      <option value="penny_de|Penny|DE">🇩🇪 Penny DE</option>
-      <option value="kaufland_de|Kaufland|DE">🇩🇪 Kaufland DE</option>
-      <option value="hiebers_de|Hieber's|DE">🇩🇪 Hieber's DE</option>
-      <option value="alnatura_de|Alnatura|DE">🇩🇪 Alnatura DE</option>
-      <option value="dm_de|dm Drogerie|DE">🇩🇪 dm Drogerie DE</option>
-      <option value="rossmann_de|Rossmann|DE">🇩🇪 Rossmann DE</option>
-      <option value="migros_ch|Migros|CH">🇨🇭 Migros CH</option>
-      <option value="coop_ch|Coop|CH">🇨🇭 Coop CH</option>
-      <option value="lidl_ch|Lidl CH|CH">🇨🇭 Lidl CH</option>
-      <option value="aldi_ch|Aldi CH|CH">🇨🇭 Aldi CH</option>
-      <option value="denner_ch|Denner|CH">🇨🇭 Denner CH</option>
-      <option value="leclerc_fr|E.Leclerc|FR">🇫🇷 E.Leclerc FR</option>
-      <option value="carrefour_fr|Carrefour|FR">🇫🇷 Carrefour FR</option>
-      <option value="lidl_fr|Lidl FR|FR">🇫🇷 Lidl FR</option>
-      <option value="grand_frais|Grand Frais|FR">🇫🇷 Grand Frais FR</option>
-      <option value="biocoop_fr|Biocoop|FR">🇫🇷 Biocoop FR</option>
-    </select>
-    <label>Price (EUR)</label>
-    <input type="number" id="priceInput" placeholder="e.g. 3.99" step="0.01" min="0">
-    <label>Unit</label>
-    <select id="unitSelect">
-      <option value="kg">kg</option>
-      <option value="pcs">pcs</option>
-      <option value="L">L</option>
-      <option value="pack">pack</option>
-    </select>
-    <label>Valid until</label>
-    <input type="date" id="validUntil">
-    <button class="btn" onclick="submitPrice()">💾 Save Price</button>
-    <div class="status" id="priceStatus"></div>
+    <h2>📷 Scan Barcode to Add Price</h2>
+
+```
+<!-- SCAN BUTTON -->
+<div style="display:flex;gap:8px;margin-bottom:14px">
+  <button onclick="startAdminScan()" id="adminScanBtn" style="flex:1;background:#30D1C8;color:#000;border:none;border-radius:11px;padding:13px 0;font-size:16px;font-weight:700;cursor:pointer">📷 Scan Barcode</button>
+  <button onclick="stopAdminScan()" id="adminStopBtn" style="display:none;flex:1;background:#FF453A;color:#fff;border:none;border-radius:11px;padding:13px 0;font-size:16px;font-weight:700;cursor:pointer">⏹ Stop</button>
+</div>
+
+<!-- CAMERA -->
+<div id="adminCameraWrap" style="display:none;position:relative;background:#000;border-radius:12px;overflow:hidden;margin-bottom:12px;aspect-ratio:4/3">
+  <video id="adminVideo" playsinline autoplay muted style="width:100%;height:100%;object-fit:cover"></video>
+  <canvas id="adminCanvas" style="display:none"></canvas>
+  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+    <div style="width:80%;height:120px;border:2.5px solid #30D1C8;border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,0.5)"></div>
+  </div>
+  <div id="adminScanStatus" style="position:absolute;top:10px;left:0;right:0;text-align:center;font-size:13px;color:#30D1C8;font-weight:600">Hold barcode in frame</div>
+</div>
+
+<!-- MANUAL BARCODE -->
+<div style="display:flex;gap:8px;margin-bottom:14px">
+  <input type="number" id="adminBarcode" inputmode="numeric" placeholder="Or type barcode manually..." style="flex:1;background:#2C2C2E;border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#f5f5f7;padding:11px 13px;font-size:16px;outline:none">
+  <button onclick="lookupAdminBarcode()" style="background:#30D1C8;color:#000;border:none;border-radius:10px;padding:11px 16px;font-size:15px;font-weight:700;cursor:pointer">Go</button>
+</div>
+
+<!-- PRODUCT INFO (auto-filled) -->
+<div id="adminProductCard" style="display:none;background:#2C2C2E;border-radius:12px;padding:14px;margin-bottom:14px">
+  <div style="display:flex;gap:12px;align-items:center">
+    <img id="adminProductImg" src="" style="width:52px;height:52px;object-fit:contain;border-radius:8px;background:#1C1C1E;flex-shrink:0" onerror="this.style.display='none'">
+    <div>
+      <div id="adminProductName" style="font-size:16px;font-weight:700"></div>
+      <div id="adminProductBrand" style="font-size:13px;color:#A1A1A6"></div>
+      <div id="adminProductBarcode" style="font-size:11px;color:#6E6E73"></div>
+    </div>
+  </div>
+</div>
+
+<div id="adminLookupStatus" style="font-size:13px;color:#6E6E73;margin-bottom:10px;min-height:18px"></div>
+
+<label>Product ID (auto-filled)</label>
+<input type="text" id="prodId" placeholder="e.g. salmon_fillet">
+<label>Product Name (auto-filled)</label>
+<input type="text" id="prodName" placeholder="e.g. Salmon Fillet">
+<label>Store</label>
+<select id="storeSelect">
+  <option value="lidl_de|Lidl|DE">🇩🇪 Lidl DE</option>
+  <option value="aldi_de|Aldi|DE">🇩🇪 Aldi DE</option>
+  <option value="rewe_de|Rewe|DE">🇩🇪 Rewe DE</option>
+  <option value="edeka_de|Edeka|DE">🇩🇪 Edeka DE</option>
+  <option value="penny_de|Penny|DE">🇩🇪 Penny DE</option>
+  <option value="kaufland_de|Kaufland|DE">🇩🇪 Kaufland DE</option>
+  <option value="hiebers_de|Hieber's|DE">🇩🇪 Hieber's DE</option>
+  <option value="alnatura_de|Alnatura|DE">🇩🇪 Alnatura DE</option>
+  <option value="dm_de|dm Drogerie|DE">🇩🇪 dm Drogerie DE</option>
+  <option value="rossmann_de|Rossmann|DE">🇩🇪 Rossmann DE</option>
+  <option value="migros_ch|Migros|CH">🇨🇭 Migros CH</option>
+  <option value="coop_ch|Coop|CH">🇨🇭 Coop CH</option>
+  <option value="lidl_ch|Lidl CH|CH">🇨🇭 Lidl CH</option>
+  <option value="aldi_ch|Aldi CH|CH">🇨🇭 Aldi CH</option>
+  <option value="denner_ch|Denner|CH">🇨🇭 Denner CH</option>
+  <option value="leclerc_fr|E.Leclerc|FR">🇫🇷 E.Leclerc FR</option>
+  <option value="carrefour_fr|Carrefour|FR">🇫🇷 Carrefour FR</option>
+  <option value="lidl_fr|Lidl FR|FR">🇫🇷 Lidl FR</option>
+  <option value="grand_frais|Grand Frais|FR">🇫🇷 Grand Frais FR</option>
+  <option value="biocoop_fr|Biocoop|FR">🇫🇷 Biocoop FR</option>
+</select>
+<label>Price (EUR)</label>
+<input type="number" id="priceInput" placeholder="e.g. 3.99" step="0.01" min="0">
+<label>Unit</label>
+<select id="unitSelect">
+  <option value="kg">kg</option>
+  <option value="pcs">pcs</option>
+  <option value="L">L</option>
+  <option value="pack">pack</option>
+</select>
+<label>Valid until</label>
+<input type="date" id="validUntil">
+<button class="btn" onclick="submitPrice()">💾 Save Price</button>
+<div class="status" id="priceStatus"></div>
+```
+
   </div>
 
   <div class="card">
@@ -317,6 +357,163 @@ function showTab(tab) {
   });
   if (tab==='reports') loadReports();
   if (tab==='leads') loadLeads();
+}
+
+
+// ═══════════════════════════════════
+// ADMIN BARCODE SCANNER
+// ═══════════════════════════════════
+var adminStream = null;
+var adminScanning = false;
+
+async function startAdminScan() {
+  var wrap = document.getElementById('adminCameraWrap');
+  var video = document.getElementById('adminVideo');
+  var scanBtn = document.getElementById('adminScanBtn');
+  var stopBtn = document.getElementById('adminStopBtn');
+
+  try {
+    adminStream = await navigator.mediaDevices.getUserMedia({
+      video: {facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080}}
+    });
+    video.srcObject = adminStream;
+    await video.play();
+    wrap.style.display = 'block';
+    scanBtn.style.display = 'none';
+    stopBtn.style.display = 'flex';
+    adminScanning = true;
+    document.getElementById('adminScanStatus').textContent = 'Hold barcode in frame...';
+
+    if ('BarcodeDetector' in window) {
+      detectBarcode(video);
+    } else {
+      document.getElementById('adminScanStatus').textContent = 'Use Capture button or type manually';
+      // Add capture button
+      var capBtn = document.createElement('button');
+      capBtn.textContent = '📸 Capture';
+      capBtn.style.cssText = 'position:absolute;bottom:12px;left:50%;transform:translateX(-50%);background:#30D1C8;color:#000;border:none;border-radius:10px;padding:10px 24px;font-size:15px;font-weight:700;cursor:pointer';
+      capBtn.onclick = captureAdminFrame;
+      document.getElementById('adminCameraWrap').appendChild(capBtn);
+    }
+  } catch(e) {
+    alert('Camera error: ' + e.message);
+  }
+}
+
+function detectBarcode(video) {
+  if (!adminScanning) return;
+  var det = new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39']});
+  det.detect(video).then(function(codes) {
+    if (codes.length > 0) {
+      var code = codes[0].rawValue;
+      document.getElementById('adminScanStatus').textContent = '✅ Found: ' + code;
+      stopAdminScan();
+      document.getElementById('adminBarcode').value = code;
+      lookupAdminBarcode();
+    } else {
+      if (adminScanning) setTimeout(function(){detectBarcode(video);}, 400);
+    }
+  }).catch(function() {
+    if (adminScanning) setTimeout(function(){detectBarcode(video);}, 500);
+  });
+}
+
+function captureAdminFrame() {
+  var video = document.getElementById('adminVideo');
+  var canvas = document.getElementById('adminCanvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+
+  if (window.Quagga) {
+    runAdminQuagga(canvas);
+  } else {
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js';
+    s.onload = function(){ runAdminQuagga(canvas); };
+    document.head.appendChild(s);
+  }
+}
+
+function runAdminQuagga(canvas) {
+  document.getElementById('adminScanStatus').textContent = 'Scanning...';
+  Quagga.decodeSingle({
+    decoder:{readers:['ean_reader','ean_8_reader','upc_reader','code_128_reader']},
+    locate:true, src:canvas.toDataURL('image/png')
+  }, function(result) {
+    if (result && result.codeResult) {
+      var code = result.codeResult.code;
+      stopAdminScan();
+      document.getElementById('adminBarcode').value = code;
+      lookupAdminBarcode();
+    } else {
+      document.getElementById('adminScanStatus').textContent = 'Not found — try again';
+    }
+  });
+}
+
+function stopAdminScan() {
+  adminScanning = false;
+  if (adminStream) {
+    adminStream.getTracks().forEach(function(t){try{t.stop();}catch(e){}});
+    adminStream = null;
+  }
+  var video = document.getElementById('adminVideo');
+  if (video) { try{video.pause();video.srcObject=null;}catch(e){} }
+  document.getElementById('adminCameraWrap').style.display = 'none';
+  document.getElementById('adminScanBtn').style.display = 'flex';
+  document.getElementById('adminStopBtn').style.display = 'none';
+}
+
+async function lookupAdminBarcode() {
+  var code = document.getElementById('adminBarcode').value.trim();
+  if (!code) return;
+  var statusEl = document.getElementById('adminLookupStatus');
+  statusEl.textContent = 'Looking up product...';
+  statusEl.style.color = '#6E6E73';
+
+  try {
+    var resp = await fetch('https://world.openfoodfacts.org/api/v2/product/' + encodeURIComponent(code) + '?fields=product_name,brands,quantity,image_url,categories_tags,countries_tags');
+    var data = await resp.json();
+
+    if (data.status !== 1 || !data.product || !data.product.product_name) {
+      statusEl.textContent = '❌ Product not found in Open Food Facts';
+      statusEl.style.color = '#FF453A';
+      return;
+    }
+
+    var p = data.product;
+    var name = p.product_name || '';
+    var brand = p.brands || '';
+    var qty = p.quantity || '';
+    var img = p.image_url || '';
+    var countries = (p.countries_tags || []).join(', ').replace(/en:/g,'');
+
+    // Generate product ID from name
+    var pid = name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').substring(0,30);
+
+    // Fill form fields
+    document.getElementById('prodId').value = pid;
+    document.getElementById('prodName').value = name + (qty ? ' ('+qty+')' : '');
+
+    // Show product card
+    document.getElementById('adminProductImg').src = img;
+    document.getElementById('adminProductImg').style.display = img ? 'block' : 'none';
+    document.getElementById('adminProductName').textContent = name;
+    document.getElementById('adminProductBrand').textContent = brand + (qty ? ' · ' + qty : '');
+    document.getElementById('adminProductBarcode').textContent = '📦 ' + code + (countries ? ' · ' + countries : '');
+    document.getElementById('adminProductCard').style.display = 'block';
+
+    statusEl.textContent = '✅ Product found! Check the price field and save.';
+    statusEl.style.color = '#30D158';
+
+    // Focus on price input
+    document.getElementById('priceInput').focus();
+
+  } catch(e) {
+    statusEl.textContent = '⚠️ Network error. Try again.';
+    statusEl.style.color = '#FF9F0A';
+  }
 }
 
 // Init
