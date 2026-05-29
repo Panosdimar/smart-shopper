@@ -288,9 +288,15 @@ async function submitPrice() {
 async function deletePrice(id) {
   if (!confirm('Delete this price?')) return;
   try {
-    await api('prices?id=eq.' + id, 'DELETE');
+    const h = Object.assign({}, headers, {'Prefer':'return=minimal'});
+    const r = await fetch(SUPABASE_URL+'/rest/v1/prices?id=eq.'+id, {method:'DELETE', headers:h});
+    if (!r.ok) {
+      const txt = await r.text();
+      throw new Error(txt);
+    }
     loadPrices(); loadStats();
-  } catch(e) { alert('Error: ' + e.message); }
+    alert('Deleted!');
+  } catch(e) { alert('Error deleting: ' + e.message); }
 }
 
 async function loadReports() {
@@ -333,8 +339,12 @@ async function approveReport(id) {
 
 async function deleteReport(id) {
   if (!confirm('Delete this report?')) return;
-  try { await api('price_reports?id=eq.' + id, 'DELETE'); loadReports(); loadStats(); }
-  catch(e) { alert('Error: ' + e.message); }
+  try {
+    const h = Object.assign({}, headers, {'Prefer':'return=minimal'});
+    const r = await fetch(SUPABASE_URL+'/rest/v1/price_reports?id=eq.'+id, {method:'DELETE', headers:h});
+    if (!r.ok) { const txt = await r.text(); throw new Error(txt); }
+    loadReports(); loadStats();
+  } catch(e) { alert('Error: ' + e.message); }
 }
 
 async function loadLeads() {
