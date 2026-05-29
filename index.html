@@ -1167,10 +1167,13 @@ function renderCategories() {
 function calcItem(pid, store) {
   // Check real prices from Supabase first
   var key = pid + '_' + store.id;
-  if (pricesLoaded && realPrices[key]) {
-    var rp = realPrices[key];
+  var normPid = pid.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').substring(0,30);
+  var key2 = normPid + '_' + store.id;
+  var rp = (pricesLoaded && (realPrices[key] || realPrices[key2]));
+  if (rp) {
     var rPrice = parseFloat(rp.price);
-    return {price:rPrice, basePrice:rPrice, src:'Real', conf:1.0, saving:0, hasOffer:true, isReal:true};
+    var curr = rp.currency || (store.flag === 'CH' ? 'CHF' : 'EUR');
+    return {price:rPrice, basePrice:rPrice, src:'Real', conf:1.0, saving:0, hasOffer:true, isReal:true, currency:curr};
   }
   // Fall back to index calculation
   var prod = PRODUCTS.find(function(p){return p.id===pid;}); if (!prod) return null;
@@ -1768,8 +1771,13 @@ async function loadRealPrices() {
   var data = await sbGet('prices?select=*&valid_until=gte.'+today+'&order=created_at.desc');
   realPrices = {};
   data.forEach(function(p) {
-    var key = p.product_id + '_' + p.store_id;
-    if (!realPrices[key]) realPrices[key] = p;
+    // Index by product_id + store
+    var key1 = p.product_id + '_' + p.store_id;
+    if (!realPrices[key1]) realPrices[key1] = p;
+    // Also index by normalized product_name + store (for fuzzy match)
+    var normName = p.product_name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').substring(0,30);
+    var key2 = normName + '_' + p.store_id;
+    if (!realPrices[key2]) realPrices[key2] = p;
   });
   pricesLoaded = true;
   console.log('Loaded '+data.length+' real prices from Supabase');
