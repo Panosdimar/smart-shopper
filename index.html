@@ -1165,13 +1165,21 @@ function renderCategories() {
 // ANALYZE
 // ═══════════════════════════════════════════════════
 function calcItem(pid, store) {
+  // Check real prices from Supabase first
+  var key = pid + '_' + store.id;
+  if (pricesLoaded && realPrices[key]) {
+    var rp = realPrices[key];
+    var rPrice = parseFloat(rp.price);
+    return {price:rPrice, basePrice:rPrice, src:'Real', conf:1.0, saving:0, hasOffer:true, isReal:true};
+  }
+  // Fall back to index calculation
   var prod = PRODUCTS.find(function(p){return p.id===pid;}); if (!prod) return null;
   var baseAdj = prod.base * store.cidx * store.factor;
   var matching = OFFERS.filter(function(o){return o.sid===store.id&&o.pid===pid;});
-  if (!matching.length) return {price:baseAdj,basePrice:baseAdj,src:'Index',conf:0.5,saving:0,hasOffer:false};
+  if (!matching.length) return {price:baseAdj,basePrice:baseAdj,src:'Index',conf:0.5,saving:0,hasOffer:false,isReal:false};
   var totC = matching.reduce(function(s,o){return s+o.conf;},0);
   var blended = matching.reduce(function(s,o){return s+o.price*(o.conf/totC);},0);
-  return {price:blended,basePrice:baseAdj,src:matching[0].src,conf:Math.max.apply(null,matching.map(function(o){return o.conf;})),saving:Math.round((baseAdj-blended)/baseAdj*100),hasOffer:true};
+  return {price:blended,basePrice:baseAdj,src:matching[0].src,conf:Math.max.apply(null,matching.map(function(o){return o.conf;})),saving:Math.round((baseAdj-blended)/baseAdj*100),hasOffer:true,isReal:false};
 }
 
 function calcBasket(basket, store) {
@@ -1761,22 +1769,10 @@ async function loadRealPrices() {
   realPrices = {};
   data.forEach(function(p) {
     var key = p.product_id + '_' + p.store_id;
-    if (!realPrices[key]) realPrices[key] = p; // keep latest
+    if (!realPrices[key]) realPrices[key] = p;
   });
   pricesLoaded = true;
   console.log('Loaded '+data.length+' real prices from Supabase');
-}
-
-// Override calcItem to use real prices when available
-var _origCalcItem = calcItem;
-function calcItem(pid, store) {
-  var key = pid + '_' + store.id;
-  if (pricesLoaded && realPrices[key]) {
-    var rp = realPrices[key];
-    var base = parseFloat(rp.price);
-    return {price:base, basePrice:base, src:'✅ Real', conf:1.0, saving:0, hasOffer:true};
-  }
-  return _origCalcItem(pid, store);
 }
 
 // Submit community price report
