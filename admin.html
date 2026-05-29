@@ -107,12 +107,13 @@ input::placeholder{color:#6E6E73}
 
 <div id="adminLookupStatus" style="font-size:13px;color:#6E6E73;margin-bottom:10px;min-height:18px"></div>
 
-<label>Product ID (auto-filled)</label>
+<label>Product ID — must match app product ID exactly</label>
 <input type="text" id="prodId" placeholder="e.g. salmon_fillet">
+<div style="font-size:11px;color:#6E6E73;margin-top:4px">Tip: The ID is auto-generated from the product name. Check it matches what is in the app.</div>
 <label>Product Name (auto-filled)</label>
 <input type="text" id="prodName" placeholder="e.g. Salmon Fillet">
 <label>Store</label>
-<select id="storeSelect">
+<select id="storeSelect" onchange="autoSelectCurrency()">
   <option value="lidl_de|Lidl|DE">🇩🇪 Lidl DE</option>
   <option value="aldi_de|Aldi|DE">🇩🇪 Aldi DE</option>
   <option value="rewe_de|Rewe|DE">🇩🇪 Rewe DE</option>
@@ -136,6 +137,11 @@ input::placeholder{color:#6E6E73}
 </select>
 <label>Price (EUR)</label>
 <input type="number" id="priceInput" placeholder="e.g. 3.99" step="0.01" min="0">
+<label>Currency</label>
+<select id="currencySelect">
+  <option value="EUR">EUR (Germany / France)</option>
+  <option value="CHF">CHF (Switzerland)</option>
+</select>
 <label>Unit</label>
 <select id="unitSelect">
   <option value="kg">kg</option>
@@ -188,7 +194,10 @@ const headers = {
 };
 
 async function api(path, method='GET', body=null) {
-  const opts = { method, headers };
+  const h = Object.assign({}, headers);
+  if (method === 'DELETE') h['Prefer'] = 'return=minimal';
+  if (method === 'POST') h['Prefer'] = 'return=minimal';
+  const opts = { method, headers: h };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(SUPABASE_URL + '/rest/v1/' + path, opts);
   if (!r.ok) { const e = await r.text(); throw new Error(e); }
@@ -227,12 +236,19 @@ async function loadPrices() {
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <span class="badge ${flagClass}">${p.store_flag}</span>
-          <span style="font-weight:700;color:#30D1C8">EUR ${parseFloat(p.price).toFixed(2)}</span>
+          <span style="font-weight:700;color:#30D1C8">${p.currency||'EUR'} ${parseFloat(p.price).toFixed(2)}</span>
           <button class="btn-sm-red" onclick="deletePrice(${p.id})">✕</button>
         </div>
       </div>`;
     }).join('');
   } catch(e) { document.getElementById('pricesList').innerHTML = '<div style="color:#FF453A">Error loading prices</div>'; }
+}
+
+function autoSelectCurrency() {
+  const storeVal = document.getElementById('storeSelect').value.split('|');
+  const flag = storeVal[2] || 'DE';
+  const curr = document.getElementById('currencySelect');
+  if (curr) curr.value = flag === 'CH' ? 'CHF' : 'EUR';
 }
 
 async function submitPrice() {
@@ -241,6 +257,7 @@ async function submitPrice() {
   const storeVal = document.getElementById('storeSelect').value.split('|');
   const price = parseFloat(document.getElementById('priceInput').value);
   const unit = document.getElementById('unitSelect').value;
+  const currency = document.getElementById('currencySelect') ? document.getElementById('currencySelect').value : 'EUR';
   const validUntil = document.getElementById('validUntil').value;
   const statusEl = document.getElementById('priceStatus');
 
@@ -253,7 +270,7 @@ async function submitPrice() {
     await api('prices', 'POST', {
       product_id: pid, product_name: pname,
       store_id: storeVal[0], store_name: storeVal[1], store_flag: storeVal[2],
-      price: price, unit: unit, valid_until: validUntil, source: 'admin'
+      price: price, unit: unit, currency: currency, valid_until: validUntil, source: 'admin'
     });
     statusEl.textContent = '✅ Price saved!';
     statusEl.className = 'status ok'; statusEl.style.display = 'block';
