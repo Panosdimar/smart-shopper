@@ -1203,7 +1203,12 @@ function calcItem(pid, store) {
     if (rp) {
       var rPrice = parseFloat(rp.price);
       var curr = rp.currency || (store.flag==='CH'?'CHF':'EUR');
-      return {price:rPrice, basePrice:rPrice, src:'Real', conf:1.0, saving:0, hasOffer:true, isReal:true, currency:curr};
+      var cleanRealName = (rp.product_name||'')
+        .replace(/[Ѐ-ӿ]/g,'').replace(/\s*\([^)]*\)/g,'').trim()
+        || rp.product_id.replace(/_/g,' ');
+      return {price:rPrice, basePrice:rPrice, src:'Real', conf:1.0,
+              saving:0, hasOffer:true, isReal:true, currency:curr,
+              realPid:rp.product_id.trim(), realName:cleanRealName};
     }
   }
   // Fall back to index calculation
@@ -1250,71 +1255,53 @@ function doAnalyze() {
     var lines = [];
     var total = 0;
 
-    // STEP 1: Add basket items with real or index price
+    // STEP 1: Add basket items
+    // Track which real product_ids got used via basket matching
+    var usedRealPids = {};
+
     state.basket.forEach(function(b) {
       var prod = PRODUCTS.find(function(p){return p.id===b.pid;}); if (!prod) return;
       var result = calcItem(b.pid, s);
       if (!result) return;
-      var lineCurr = result.currency || currency;
+      var lc = result.currency || currency;
       var lineTotal = result.price * b.qty;
       total += lineTotal;
+
+      // If real price found, record which real product_id was used
+      if (result.isReal && result.realPid) {
+        usedRealPids[result.realPid] = true;
+      }
+
       lines.push({
         pid: b.pid,
-        displayName: tx(prod.name),
-        qty: b.qty,
-        unit: prod.unit,
-        price: result.price,
-        line: lineTotal,
+        displayName: result.isReal ? result.realName || tx(prod.name) : tx(prod.name),
+        qty: b.qty, unit: prod.unit,
+        price: result.price, line: lineTotal,
         saving: result.saving||0,
         hasOffer: result.hasOffer,
         isReal: result.isReal||false,
-        currency: lineCurr
+        currency: lc
       });
     });
 
-    // STEP 2: Add admin real prices for products NOT already covered
+    // STEP 2: Add admin prices NOT already used by basket
     if (pricesLoaded) {
-      // Collect ALL real product_ids for this store
-      var allRealPids = {};
+      var seenPids = {};
       Object.keys(realPrices).forEach(function(key) {
         if (!key.endsWith('_'+s.id)) return;
         var rp = realPrices[key];
         var rpid = rp.product_id.trim();
-        allRealPids[rpid] = rp;
-      });
-
-      // Check which basket items were NOT matched by real price
-      // If a basket item got isReal=true, its real product is already shown
-      // We need to check if the real product_id is already represented
-      var coveredRealPids = {};
-      lines.forEach(function(l){
-        if (l.isReal) {
-          // Find which real product this corresponds to
-          Object.keys(allRealPids).forEach(function(rpid) {
-            // Check if any word of rpid matches any word of l.pid
-            var rpWords = rpid.split('_');
-            var lpWords = (l.pid||'').split('_');
-            var matched = rpWords.some(function(w){ return w.length>2 && lpWords.indexOf(w)>=0; });
-            if (matched) coveredRealPids[rpid] = true;
-          });
-        }
-      });
-
-      // Add only uncovered real products
-      Object.keys(allRealPids).forEach(function(rpid) {
-        if (coveredRealPids[rpid]) return; // already shown via basket
-        var rp = allRealPids[rpid];
+        // Skip if already shown via basket match
+        if (usedRealPids[rpid] || seenPids[rpid]) return;
+        seenPids[rpid] = true;
         var rPrice = parseFloat(rp.price);
         var rCurr = rp.currency || currency;
-        // Clean product name - remove non-latin/non-common chars
         var cleanName = (rp.product_name||rpid)
-          .replace(/[^�-À-ɏḀ-ỿ]/g, '')
-          .replace(/\s*\([^)]*\)\s*/g, '')
-          .trim() || rp.product_name;
+          .replace(/[Ѐ-ӿ]/g,'').replace(/\s*\([^)]*\)/g,'').trim()
+          || rpid.replace(/_/g,' ');
         total += rPrice;
         lines.push({
-          pid: rpid,
-          displayName: cleanName,
+          pid: rpid, displayName: cleanName,
           qty: 1, unit: rp.unit||'pcs',
           price: rPrice, line: rPrice,
           saving: 0, hasOffer: true, isReal: true,
@@ -1323,7 +1310,7 @@ function doAnalyze() {
       });
     }
 
-    // STEP 3: Sort — real prices first, then by price
+        // STEP 3: Sort — real prices first, then by price
     lines.sort(function(a,b){
       if (a.isReal && !b.isReal) return -1;
       if (!a.isReal && b.isReal) return 1;
