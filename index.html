@@ -325,6 +325,7 @@ input[type=range]{accent-color:var(--green);width:100%;cursor:pointer}
 
 <div class="step" id="stepResults">
   <div id="resultsHeader" style="font-size:10px;color:var(--text3);letter-spacing:1.5px;text-transform:uppercase;padding:14px 0 9px"></div>
+  <div id="debugBar" style="display:none;background:rgba(255,159,10,0.1);border:1px solid rgba(255,159,10,0.3);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#FF9F0A"></div>
   <div id="resultsList"></div>
   <div style="font-size:10px;color:var(--text3);text-align:center;margin:8px 0">Prices: index baseline + weekly offers</div>
   <div style="background:rgba(48,209,200,0.06);border:1px solid rgba(48,209,200,0.15);border-radius:14px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px">
@@ -1321,6 +1322,19 @@ function doAnalyze() {
     container.appendChild(card);
   });
 
+  // Show debug info
+  var debugBar = document.getElementById('debugBar');
+  if (debugBar) {
+    var rpKeys = Object.keys(realPrices);
+    if (rpKeys.length > 0) {
+      debugBar.style.display = 'block';
+      debugBar.innerHTML = '✅ Loaded <b>' + rpKeys.length/2 + '</b> real prices from Admin. Stores: ' +
+        [...new Set(rpKeys.map(function(k){ return k.split('_').pop(); }))].join(', ').substring(0,80);
+    } else {
+      debugBar.style.display = 'block';
+      debugBar.innerHTML = '⚠️ 0 real prices loaded — check Supabase connection';
+    }
+  }
   showStep('results');
   maybeShowNewsletter();
 }
@@ -1812,8 +1826,17 @@ var SB_HDR = {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':
 async function sbGet(path) {
   try {
     var r = await fetch(SB_URL+'/rest/v1/'+path, {headers:SB_HDR});
-    return r.ok ? r.json() : [];
-  } catch(e) { return []; }
+    if (!r.ok) {
+      console.error('[SB] Error '+r.status+' for: '+path);
+      return [];
+    }
+    var data = await r.json();
+    console.log('[SB] GET '+path+' -> '+data.length+' rows');
+    return data;
+  } catch(e) {
+    console.error('[SB] Network error:', e.message);
+    return [];
+  }
 }
 
 async function sbPost(path, body) {
