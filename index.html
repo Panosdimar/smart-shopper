@@ -1173,21 +1173,33 @@ function renderCategories() {
 // ═══════════════════════════════════════════════════
 function calcItem(pid, store) {
   if (pricesLoaded) {
-    // Try exact product_id match
-    var rp = realPrices[pid + '_' + store.id];
-    // Try normalized pid
+    var sid = store.id;
+    var rp = null;
+
+    // 1. Exact pid match
+    rp = realPrices[pid + '_' + sid];
+
+    // 2. Each word in pid
     if (!rp) {
-      var np = pid.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').substring(0,30);
-      rp = realPrices[np + '_' + store.id];
+      pid.split('_').some(function(word) {
+        if (word.length > 2 && realPrices[word+'_'+sid]) { rp = realPrices[word+'_'+sid]; return true; }
+      });
     }
-    // Try matching by product name from PRODUCTS array
+
+    // 3. Product name words from PRODUCTS
     if (!rp) {
       var prod2 = PRODUCTS.find(function(p){return p.id===pid;});
       if (prod2) {
-        var nname = prod2.name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').substring(0,30);
-        rp = realPrices[nname + '_' + store.id];
+        var nname = prod2.name.toLowerCase().replace(/[^a-z0-9]+/g,'_');
+        rp = realPrices[nname+'_'+sid];
+        if (!rp) {
+          nname.split('_').some(function(word) {
+            if (word.length > 2 && realPrices[word+'_'+sid]) { rp = realPrices[word+'_'+sid]; return true; }
+          });
+        }
       }
     }
+
     if (rp) {
       var rPrice = parseFloat(rp.price);
       var curr = rp.currency || (store.flag==='CH'?'CHF':'EUR');
@@ -1911,20 +1923,27 @@ async function loadRealPrices() {
     realPrices = {};
     data.forEach(function(p) {
       var sid = p.store_id.trim();
-      // Key 1: exact product_id
-      var key1 = p.product_id.trim() + '_' + sid;
-      if (!realPrices[key1]) realPrices[key1] = p;
-      // Key 2: normalized product_name (removes qty in brackets)
+      var pid = p.product_id.trim();
+
+      // Key 1: exact product_id_store_id
+      realPrices[pid + '_' + sid] = p;
+
+      // Key 2: each word of product_id separately
+      pid.split('_').forEach(function(word) {
+        if (word.length > 2) realPrices[word + '_' + sid] = p;
+      });
+
+      // Key 3: normalized product_name
       var normName = (p.product_name||'').toLowerCase()
-        .replace(/\([^)]*\)/g,'')
         .replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').substring(0,30);
-      var key2 = normName + '_' + sid;
-      if (!realPrices[key2]) realPrices[key2] = p;
-      // Key 3: first 2 words of product name (short match)
-      var words = (p.product_name||'').toLowerCase().split(/\s+/).slice(0,2).join('_').replace(/[^a-z0-9_]/g,'');
-      var key3 = words + '_' + sid;
-      if (!realPrices[key3]) realPrices[key3] = p;
+      realPrices[normName + '_' + sid] = p;
+
+      // Key 4: each word of product_name
+      normName.split('_').forEach(function(word) {
+        if (word.length > 2) realPrices[word + '_' + sid] = p;
+      });
     });
+    console.log('[SB] realPrices keys:', Object.keys(realPrices).join(', '));
     pricesLoaded = true;
     console.log('[SmartShopper] Loaded '+data.length+' real prices. Keys: '+Object.keys(realPrices).join(', ').substring(0,100));
   } catch(e) {
