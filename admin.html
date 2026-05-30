@@ -205,9 +205,10 @@ async function api(path, method='GET', body=null) {
 }
 
 // Set default valid_until to next Sunday
-const nextSun = new Date();
-nextSun.setDate(nextSun.getDate() + (7 - nextSun.getDay()));
-document.getElementById('validUntil').value = nextSun.toISOString().split('T')[0];
+// Default valid_until = 3 months from now
+const def3m = new Date();
+def3m.setMonth(def3m.getMonth() + 3);
+document.getElementById('validUntil').value = def3m.toISOString().split('T')[0];
 
 async function loadStats() {
   try {
