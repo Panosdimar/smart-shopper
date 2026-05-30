@@ -1233,7 +1233,43 @@ function doAnalyze() {
   }
 
   var ranked = stores.map(function(s) {
-    var r = calcBasket(state.basket,s); return Object.assign({},s,r);
+    var r = calcBasket(state.basket, s);
+    // Also add real prices from Admin that match this store but aren't in basket
+    if (pricesLoaded) {
+      Object.keys(realPrices).forEach(function(key) {
+        if (!key.endsWith('_' + s.id)) return;
+        var rp = realPrices[key];
+        // Check if already covered by basket
+        var alreadyIn = r.lines.some(function(l) {
+          return l.isReal && (
+            key.startsWith(l.id+'_') ||
+            key.startsWith(l.pid+'_')
+          );
+        });
+        if (!alreadyIn) {
+          var rPrice = parseFloat(rp.price);
+          var curr = rp.currency || (s.flag==='CH'?'CHF':'EUR');
+          r.lines.push({
+            id: rp.product_id,
+            pid: rp.product_id,
+            name: rp.product_name,
+            displayName: rp.product_name,
+            qty: 1,
+            unit: rp.unit||'pcs',
+            price: rPrice,
+            basePrice: rPrice,
+            line: rPrice,
+            saving: 0,
+            hasOffer: true,
+            isReal: true,
+            currency: curr,
+            fromAdmin: true
+          });
+          r.total += rPrice;
+        }
+      });
+    }
+    return Object.assign({},s,r);
   }).sort(function(a,b){ return state.sortBy==='dist'?a.distKm-b.distKm:state.sortBy==='saving'?b.saved-a.saved:a.total-b.total; });
 
   document.getElementById('resultsHeader').textContent = ranked.length+' stores '+String.fromCharCode(183)+' '+radius+' km from '+state.loc.city;
