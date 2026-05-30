@@ -1171,15 +1171,27 @@ function renderCategories() {
 // ANALYZE
 // ═══════════════════════════════════════════════════
 function calcItem(pid, store) {
-  // Check real prices from Supabase first
-  var key = pid + '_' + store.id;
-  var normPid = pid.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').substring(0,30);
-  var key2 = normPid + '_' + store.id;
-  var rp = (pricesLoaded && (realPrices[key] || realPrices[key2]));
-  if (rp) {
-    var rPrice = parseFloat(rp.price);
-    var curr = rp.currency || (store.flag === 'CH' ? 'CHF' : 'EUR');
-    return {price:rPrice, basePrice:rPrice, src:'Real', conf:1.0, saving:0, hasOffer:true, isReal:true, currency:curr};
+  if (pricesLoaded) {
+    // Try exact product_id match
+    var rp = realPrices[pid + '_' + store.id];
+    // Try normalized pid
+    if (!rp) {
+      var np = pid.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').substring(0,30);
+      rp = realPrices[np + '_' + store.id];
+    }
+    // Try matching by product name from PRODUCTS array
+    if (!rp) {
+      var prod2 = PRODUCTS.find(function(p){return p.id===pid;});
+      if (prod2) {
+        var nname = prod2.name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').substring(0,30);
+        rp = realPrices[nname + '_' + store.id];
+      }
+    }
+    if (rp) {
+      var rPrice = parseFloat(rp.price);
+      var curr = rp.currency || (store.flag==='CH'?'CHF':'EUR');
+      return {price:rPrice, basePrice:rPrice, src:'Real', conf:1.0, saving:0, hasOffer:true, isReal:true, currency:curr};
+    }
   }
   // Fall back to index calculation
   var prod = PRODUCTS.find(function(p){return p.id===pid;}); if (!prod) return null;
@@ -1245,7 +1257,7 @@ function doAnalyze() {
     h += '</div><div style="font-size:11px;color:var(--text3)">'+s.distKm+' km '+String.fromCharCode(183)+' '+s.note+'</div></div>';
     h += '<div style="text-align:right;flex-shrink:0">';
     var hasReal = s.lines.some(function(l){return l.isReal;});
-    h += '<div style="font-size:17px;font-weight:800;color:'+(isBest?'var(--green)':'var(--text2)')+'">EUR '+s.total.toFixed(2)+'</div>';
+    h += '<div style="font-size:17px;font-weight:800;color:'+(isBest?'var(--green)':'var(--text2)')+'">'+( s.flag==='CH'?'CHF':'EUR')+' '+s.total.toFixed(2)+'</div>';
     if (hasReal) h += '<div style="font-size:10px;color:#30D158;font-weight:600">✓ real prices</div>';
     if (s.saved>0.01) h += '<div style="font-size:11px;color:#4ade80">-EUR '+s.saved.toFixed(2)+'</div>';
     h += '<div style="font-size:10px;color:var(--text3)">'+s.lines.filter(function(l){return l.hasOffer;}).length+'/'+s.lines.length+' offers</div>';
@@ -1785,15 +1797,20 @@ async function loadRealPrices() {
     var data = await sbGet('prices?select=*&valid_until=gte.'+today+'&order=created_at.desc');
     realPrices = {};
     data.forEach(function(p) {
-      // Key 1: exact product_id + store_id
-      var key1 = p.product_id.trim() + '_' + p.store_id.trim();
+      var sid = p.store_id.trim();
+      // Key 1: exact product_id
+      var key1 = p.product_id.trim() + '_' + sid;
       if (!realPrices[key1]) realPrices[key1] = p;
-      // Key 2: normalized name (first 30 chars) + store_id
+      // Key 2: normalized product_name (removes qty in brackets)
       var normName = (p.product_name||'').toLowerCase()
-        .replace(/\([^)]*\)/g,'') // remove (qty) part
+        .replace(/\([^)]*\)/g,'')
         .replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').substring(0,30);
-      var key2 = normName + '_' + p.store_id.trim();
+      var key2 = normName + '_' + sid;
       if (!realPrices[key2]) realPrices[key2] = p;
+      // Key 3: first 2 words of product name (short match)
+      var words = (p.product_name||'').toLowerCase().split(/\s+/).slice(0,2).join('_').replace(/[^a-z0-9_]/g,'');
+      var key3 = words + '_' + sid;
+      if (!realPrices[key3]) realPrices[key3] = p;
     });
     pricesLoaded = true;
     console.log('[SmartShopper] Loaded '+data.length+' real prices. Keys: '+Object.keys(realPrices).join(', ').substring(0,100));
