@@ -1272,38 +1272,53 @@ function doAnalyze() {
       });
     });
 
-    // STEP 2: Add admin real prices for products NOT in basket (deduplicated)
+    // STEP 2: Add admin real prices for products NOT already covered
     if (pricesLoaded) {
-      var usedPids = {};
-      lines.forEach(function(l){ usedPids[l.pid] = true; });
-
-      // Collect unique real prices for this store only
-      var uniqueReal = {};
+      // Collect ALL real product_ids for this store
+      var allRealPids = {};
       Object.keys(realPrices).forEach(function(key) {
         if (!key.endsWith('_'+s.id)) return;
         var rp = realPrices[key];
         var rpid = rp.product_id.trim();
-        if (usedPids[rpid] || uniqueReal[rpid]) return;
-        uniqueReal[rpid] = rp;
+        allRealPids[rpid] = rp;
       });
 
-      Object.keys(uniqueReal).forEach(function(rpid) {
-        var rp = uniqueReal[rpid];
+      // Check which basket items were NOT matched by real price
+      // If a basket item got isReal=true, its real product is already shown
+      // We need to check if the real product_id is already represented
+      var coveredRealPids = {};
+      lines.forEach(function(l){
+        if (l.isReal) {
+          // Find which real product this corresponds to
+          Object.keys(allRealPids).forEach(function(rpid) {
+            // Check if any word of rpid matches any word of l.pid
+            var rpWords = rpid.split('_');
+            var lpWords = (l.pid||'').split('_');
+            var matched = rpWords.some(function(w){ return w.length>2 && lpWords.indexOf(w)>=0; });
+            if (matched) coveredRealPids[rpid] = true;
+          });
+        }
+      });
+
+      // Add only uncovered real products
+      Object.keys(allRealPids).forEach(function(rpid) {
+        if (coveredRealPids[rpid]) return; // already shown via basket
+        var rp = allRealPids[rpid];
         var rPrice = parseFloat(rp.price);
         var rCurr = rp.currency || currency;
+        // Clean product name - remove non-latin/non-common chars
+        var cleanName = (rp.product_name||rpid)
+          .replace(/[^�-À-ɏḀ-ỿ]/g, '')
+          .replace(/\s*\([^)]*\)\s*/g, '')
+          .trim() || rp.product_name;
         total += rPrice;
         lines.push({
           pid: rpid,
-          displayName: rp.product_name,
-          qty: 1,
-          unit: rp.unit||'pcs',
-          price: rPrice,
-          line: rPrice,
-          saving: 0,
-          hasOffer: true,
-          isReal: true,
-          currency: rCurr,
-          fromAdmin: true
+          displayName: cleanName,
+          qty: 1, unit: rp.unit||'pcs',
+          price: rPrice, line: rPrice,
+          saving: 0, hasOffer: true, isReal: true,
+          currency: rCurr, fromAdmin: true
         });
       });
     }
