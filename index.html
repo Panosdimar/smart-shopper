@@ -1235,41 +1235,44 @@ function doAnalyze() {
 
   var ranked = stores.map(function(s) {
     var r = calcBasket(state.basket, s);
-    // Also add real prices from Admin that match this store but aren't in basket
+
+    // Add admin real prices that aren't already covered by basket
     if (pricesLoaded) {
+      var addedPids = {};
+      // Mark pids already in lines
+      r.lines.forEach(function(l){ addedPids[l.pid||l.id] = true; });
+
+      // Collect unique real prices for this store
+      var seenRealPids = {};
       Object.keys(realPrices).forEach(function(key) {
         if (!key.endsWith('_' + s.id)) return;
         var rp = realPrices[key];
-        // Check if already covered by basket
-        var alreadyIn = r.lines.some(function(l) {
-          return l.isReal && (
-            key.startsWith(l.id+'_') ||
-            key.startsWith(l.pid+'_')
-          );
+        var rpid = rp.product_id;
+        // Skip if already in basket lines or already added
+        if (addedPids[rpid] || seenRealPids[rpid]) return;
+        seenRealPids[rpid] = true;
+        var rPrice = parseFloat(rp.price);
+        var curr = rp.currency || (s.flag==='CH'?'CHF':'EUR');
+        r.lines.push({
+          id: rpid, pid: rpid,
+          name: rp.product_name,
+          displayName: rp.product_name,
+          qty: 1, unit: rp.unit||'pcs',
+          price: rPrice, basePrice: rPrice, line: rPrice,
+          saving: 0, hasOffer: true, isReal: true,
+          currency: curr, fromAdmin: true
         });
-        if (!alreadyIn) {
-          var rPrice = parseFloat(rp.price);
-          var curr = rp.currency || (s.flag==='CH'?'CHF':'EUR');
-          r.lines.push({
-            id: rp.product_id,
-            pid: rp.product_id,
-            name: rp.product_name,
-            displayName: rp.product_name,
-            qty: 1,
-            unit: rp.unit||'pcs',
-            price: rPrice,
-            basePrice: rPrice,
-            line: rPrice,
-            saving: 0,
-            hasOffer: true,
-            isReal: true,
-            currency: curr,
-            fromAdmin: true
-          });
-          r.total += rPrice;
-        }
+        r.total += rPrice;
       });
     }
+
+    // Sort lines: real prices first, then by price ascending
+    r.lines.sort(function(a,b){
+      if (a.isReal && !b.isReal) return -1;
+      if (!a.isReal && b.isReal) return 1;
+      return a.price - b.price;
+    });
+
     return Object.assign({},s,r);
   }).sort(function(a,b){ return state.sortBy==='dist'?a.distKm-b.distKm:state.sortBy==='saving'?b.saved-a.saved:a.total-b.total; });
 
@@ -1303,10 +1306,13 @@ function doAnalyze() {
     h += '<div style="font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Breakdown</div>';
     s.lines.forEach(function(line) {
       h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;gap:8px">';
-      h += '<div style="flex:1"><span style="font-size:13px;color:'+(line.hasOffer?'var(--green)':'var(--text2)')+'">'+line.displayName+'</span>';
+      var lCurr = line.currency || (s.flag==='CH'?'CHF':'EUR');
+      h += '<div style="flex:1">';
+      if (line.isReal) h += '<span style="background:#30D158;color:#000;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:700;margin-right:4px">REAL</span>';
+      h += '<span style="font-size:13px;color:'+(line.isReal?'#30D158':line.hasOffer?'var(--green)':'var(--text2)')+'">'+line.displayName+'</span>';
       h += ' <span style="font-size:11px;color:var(--text3)">x'+line.qty+' '+line.unit+'</span>';
-      if (line.hasOffer) h += ' <span style="font-size:10px;color:var(--green);background:rgba(48,209,200,0.1);border-radius:4px;padding:1px 5px">-'+line.saving+'%</span>';
-      h += '</div><span style="font-size:13px;font-weight:700;color:var(--text)">EUR '+line.line.toFixed(2)+'</span></div>';
+      if (!line.isReal && line.saving>0) h += ' <span style="font-size:10px;color:var(--green);background:rgba(48,209,200,0.1);border-radius:4px;padding:1px 5px">-'+line.saving+'%</span>';
+      h += '</div><span style="font-size:13px;font-weight:700;color:'+(line.isReal?'#30D158':'var(--text)')+'">'+lCurr+' '+line.line.toFixed(2)+'</span></div>';
     });
     h += '<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border2)">';
     h += '<span style="font-size:13px;color:var(--text3)">Total</span>';
