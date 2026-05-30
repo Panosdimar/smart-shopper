@@ -1853,7 +1853,7 @@ var pricesLoaded = false;
 async function loadRealPrices() {
   try {
     var today = new Date().toISOString().split('T')[0];
-    var data = await sbGet('prices?select=*&valid_until=gte.'+today+'&order=created_at.desc');
+    var data = await sbGet('prices?select=*&order=created_at.desc&limit=500');
     realPrices = {};
     data.forEach(function(p) {
       var sid = p.store_id.trim();
