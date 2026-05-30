@@ -1234,49 +1234,90 @@ function doAnalyze() {
   }
 
   var ranked = stores.map(function(s) {
-    var r = calcBasket(state.basket, s);
+    var currency = s.flag==='CH' ? 'CHF' : 'EUR';
+    var lines = [];
+    var total = 0;
 
-    // Add admin real prices that aren't already covered by basket
+    // STEP 1: Add basket items with real or index price
+    state.basket.forEach(function(b) {
+      var prod = PRODUCTS.find(function(p){return p.id===b.pid;}); if (!prod) return;
+      var result = calcItem(b.pid, s);
+      if (!result) return;
+      var lineCurr = result.currency || currency;
+      var lineTotal = result.price * b.qty;
+      total += lineTotal;
+      lines.push({
+        pid: b.pid,
+        displayName: tx(prod.name),
+        qty: b.qty,
+        unit: prod.unit,
+        price: result.price,
+        line: lineTotal,
+        saving: result.saving||0,
+        hasOffer: result.hasOffer,
+        isReal: result.isReal||false,
+        currency: lineCurr
+      });
+    });
+
+    // STEP 2: Add admin real prices for products NOT in basket (deduplicated)
     if (pricesLoaded) {
-      var addedPids = {};
-      // Mark pids already in lines
-      r.lines.forEach(function(l){ addedPids[l.pid||l.id] = true; });
+      var usedPids = {};
+      lines.forEach(function(l){ usedPids[l.pid] = true; });
 
-      // Collect unique real prices for this store
-      var seenRealPids = {};
+      // Collect unique real prices for this store only
+      var uniqueReal = {};
       Object.keys(realPrices).forEach(function(key) {
-        if (!key.endsWith('_' + s.id)) return;
+        if (!key.endsWith('_'+s.id)) return;
         var rp = realPrices[key];
-        var rpid = rp.product_id;
-        // Skip if already in basket lines or already added
-        if (addedPids[rpid] || seenRealPids[rpid]) return;
-        seenRealPids[rpid] = true;
+        var rpid = rp.product_id.trim();
+        if (usedPids[rpid] || uniqueReal[rpid]) return;
+        uniqueReal[rpid] = rp;
+      });
+
+      Object.keys(uniqueReal).forEach(function(rpid) {
+        var rp = uniqueReal[rpid];
         var rPrice = parseFloat(rp.price);
-        var curr = rp.currency || (s.flag==='CH'?'CHF':'EUR');
-        r.lines.push({
-          id: rpid, pid: rpid,
-          name: rp.product_name,
+        var rCurr = rp.currency || currency;
+        total += rPrice;
+        lines.push({
+          pid: rpid,
           displayName: rp.product_name,
-          qty: 1, unit: rp.unit||'pcs',
-          price: rPrice, basePrice: rPrice, line: rPrice,
-          saving: 0, hasOffer: true, isReal: true,
-          currency: curr, fromAdmin: true
+          qty: 1,
+          unit: rp.unit||'pcs',
+          price: rPrice,
+          line: rPrice,
+          saving: 0,
+          hasOffer: true,
+          isReal: true,
+          currency: rCurr,
+          fromAdmin: true
         });
-        r.total += rPrice;
       });
     }
 
-    // Sort lines: real prices first, then by price ascending
-    r.lines.sort(function(a,b){
+    // STEP 3: Sort — real prices first, then by price
+    lines.sort(function(a,b){
       if (a.isReal && !b.isReal) return -1;
       if (!a.isReal && b.isReal) return 1;
       return a.price - b.price;
     });
 
-    return Object.assign({},s,r);
-  }).sort(function(a,b){ return state.sortBy==='dist'?a.distKm-b.distKm:state.sortBy==='saving'?b.saved-a.saved:a.total-b.total; });
+    var saved = lines.reduce(function(acc,l){ return acc+(l.isReal?0:(l.basePrice||l.price)*l.qty-l.line); },0);
+    var realCount = lines.filter(function(l){return l.isReal;}).length;
 
-  document.getElementById('resultsHeader').textContent = ranked.length+' stores '+String.fromCharCode(183)+' '+radius+' km from '+state.loc.city;
+    return Object.assign({},s,{
+      lines:lines, total:total, saved:saved,
+      currency:currency, realCount:realCount
+    });
+
+  }).sort(function(a,b){
+    return state.sortBy==='dist' ? a.distKm-b.distKm :
+           state.sortBy==='saving' ? b.saved-a.saved :
+           a.total-b.total;
+  });
+
+  document.getElementById('resultsHeader').textContent = ranked.length+' stores · '+radius+' km from '+state.loc.city;
 
   var container = document.getElementById('resultsList');
   container.innerHTML = '';
@@ -1284,6 +1325,8 @@ function doAnalyze() {
   ranked.forEach(function(s,i) {
     var isBest = i===0 && state.sortBy==='total';
     var cross = s.flag !== state.loc.flag;
+    var curr = s.currency || (s.flag==='CH'?'CHF':'EUR');
+
     var card = document.createElement('div');
     card.className = 'store-card'+(isBest?' best':'');
     card.onclick = function(){ toggleBreakdown('bd_'+s.id); };
@@ -1294,53 +1337,58 @@ function doAnalyze() {
     if (isBest) h += '<span style="background:rgba(48,209,200,0.15);color:var(--green);border-radius:5px;padding:1px 6px;font-size:9px;font-weight:700">BEST</span>';
     if (cross) h += '<span style="background:rgba(10,132,255,0.12);color:#60a5fa;border-radius:5px;padding:1px 6px;font-size:9px;font-weight:700">CROSS-BORDER</span>';
     h += '<span style="font-size:14px;font-weight:700;color:var(--text)">'+s.flag+' '+s.name+'</span>';
-    h += '</div><div style="font-size:11px;color:var(--text3)">'+s.distKm+' km '+String.fromCharCode(183)+' '+s.note+'</div></div>';
+    h += '</div><div style="font-size:11px;color:var(--text3)">'+s.distKm+' km · '+s.note+'</div></div>';
     h += '<div style="text-align:right;flex-shrink:0">';
-    var hasReal = s.lines.some(function(l){return l.isReal;});
-    h += '<div style="font-size:17px;font-weight:800;color:'+(isBest?'var(--green)':'var(--text2)')+'">'+( s.flag==='CH'?'CHF':'EUR')+' '+s.total.toFixed(2)+'</div>';
-    if (hasReal) h += '<div style="font-size:10px;color:#30D158;font-weight:600">✓ real prices</div>';
-    if (s.saved>0.01) h += '<div style="font-size:11px;color:#4ade80">-EUR '+s.saved.toFixed(2)+'</div>';
-    h += '<div style="font-size:10px;color:var(--text3)">'+s.lines.filter(function(l){return l.hasOffer;}).length+'/'+s.lines.length+' offers</div>';
+    h += '<div style="font-size:17px;font-weight:800;color:'+(isBest?'var(--green)':'var(--text2)')+'">'+curr+' '+s.total.toFixed(2)+'</div>';
+    if (s.saved>0.01) h += '<div style="font-size:11px;color:#4ade80">-'+curr+' '+s.saved.toFixed(2)+'</div>';
+    if (s.realCount>0) h += '<div style="font-size:10px;color:#30D158;font-weight:600">✓ real prices</div>';
+    else h += '<div style="font-size:10px;color:var(--text3)">'+s.lines.filter(function(l){return l.hasOffer;}).length+'/'+s.lines.length+' offers</div>';
     h += '</div></div>';
+
+    // Breakdown
     h += '<div id="bd_'+s.id+'" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border2)">';
     h += '<div style="font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Breakdown</div>';
     s.lines.forEach(function(line) {
+      var lc = line.currency || curr;
       h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;gap:8px">';
-      var lCurr = line.currency || (s.flag==='CH'?'CHF':'EUR');
       h += '<div style="flex:1">';
-      if (line.isReal) h += '<span style="background:#30D158;color:#000;border-radius:4px;padding:1px 5px;font-size:10px;font-weight:700;margin-right:4px">REAL</span>';
-      h += '<span style="font-size:13px;color:'+(line.isReal?'#30D158':line.hasOffer?'var(--green)':'var(--text2)')+'">'+line.displayName+'</span>';
+      if (line.isReal) h += '<span style="background:#30D158;color:#000;border-radius:4px;padding:1px 5px;font-size:9px;font-weight:800;margin-right:4px">REAL</span>';
+      h += '<span style="font-size:13px;color:'+(line.isReal?'#30D158':'var(--text2)')+'">'+line.displayName+'</span>';
       h += ' <span style="font-size:11px;color:var(--text3)">x'+line.qty+' '+line.unit+'</span>';
       if (!line.isReal && line.saving>0) h += ' <span style="font-size:10px;color:var(--green);background:rgba(48,209,200,0.1);border-radius:4px;padding:1px 5px">-'+line.saving+'%</span>';
-      h += '</div><span style="font-size:13px;font-weight:700;color:'+(line.isReal?'#30D158':'var(--text)')+'">'+lCurr+' '+line.line.toFixed(2)+'</span></div>';
+      h += '</div>';
+      h += '<span style="font-size:13px;font-weight:700;color:'+(line.isReal?'#30D158':'var(--text)')+'">'+lc+' '+line.line.toFixed(2)+'</span>';
+      h += '</div>';
     });
     h += '<div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border2)">';
     h += '<span style="font-size:13px;color:var(--text3)">Total</span>';
-    h += '<span style="font-size:16px;font-weight:800;color:var(--green)">EUR '+s.total.toFixed(2)+'</span></div>';
+    h += '<span style="font-size:16px;font-weight:800;color:var(--green)">'+curr+' '+s.total.toFixed(2)+'</span>';
     h += '</div>';
-    card.innerHTML = h;
-    // Add report button separately to avoid quote escaping
+
     var rb = document.createElement('button');
     rb.textContent = 'I saw a different price here';
     rb.style.cssText = 'width:100%;background:rgba(255,214,10,0.07);border:1px solid rgba(255,214,10,0.15);color:#FFD60A;border-radius:10px;padding:10px 0;font-size:13px;font-weight:600;cursor:pointer;margin-top:10px';
     rb.addEventListener('click', (function(sid,sname,sflag){ return function(e){ e.stopPropagation(); openReport(sid,sname,sflag); }; })(s.id,s.name,s.flag));
+    h += '</div>';
+
+    card.innerHTML = h;
     card.appendChild(rb);
     container.appendChild(card);
   });
 
-  // Show debug info
+  // Debug bar
   var debugBar = document.getElementById('debugBar');
   if (debugBar) {
-    var rpKeys = Object.keys(realPrices);
-    if (rpKeys.length > 0) {
+    var rpCount = Object.keys(realPrices).length;
+    if (rpCount > 0) {
       debugBar.style.display = 'block';
-      debugBar.innerHTML = '✅ Loaded <b>' + rpKeys.length/2 + '</b> real prices from Admin. Stores: ' +
-        [...new Set(rpKeys.map(function(k){ return k.split('_').pop(); }))].join(', ').substring(0,80);
+      debugBar.innerHTML = '✅ '+Math.round(rpCount/2)+' real prices loaded from Admin';
     } else {
       debugBar.style.display = 'block';
-      debugBar.innerHTML = '⚠️ 0 real prices loaded — check Supabase connection';
+      debugBar.innerHTML = '⚠️ 0 real prices — check Supabase';
     }
   }
+
   showStep('results');
   maybeShowNewsletter();
 }
