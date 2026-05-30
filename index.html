@@ -385,8 +385,8 @@ input[type=range]{accent-color:var(--green);width:100%;cursor:pointer}
 
 <!-- NEWSLETTER MODAL -->
 
-<div id="newsletterModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:none;align-items:flex-end;justify-content:center">
-  <div style="background:#1C1C1E;border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:680px">
+<div id="newsletterModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:flex-start;justify-content:center;padding-top:60px;overflow-y:auto">
+  <div style="background:#1C1C1E;border-radius:18px;padding:24px 20px;width:calc(100% - 32px);max-width:480px;margin:0 auto">
     <div style="font-size:20px;font-weight:700;margin-bottom:6px">📧 Weekly Deals Newsletter</div>
     <div style="font-size:14px;color:#A1A1A6;margin-bottom:18px">Get the best cross-border deals every Monday — free!</div>
     <input type="email" id="newsletterEmail" placeholder="your@email.com" style="width:100%;background:#2C2C2E;border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:#f5f5f7;padding:14px 16px;font-size:16px;outline:none;margin-bottom:10px">
@@ -1205,6 +1205,11 @@ function calcBasket(basket, store) {
 
 function analyze() {
   if (!state.loc) { alert('Please set your location first.'); return; }
+  // Reload real prices from Supabase before each analysis
+  loadRealPrices().then(function() { doAnalyze(); });
+}
+
+function doAnalyze() {
   var radius = parseInt(document.getElementById('radiusSlider').value)||state.radius;
   var stores = STORES.map(function(s) {
     return Object.assign({},s,{distKm:Math.round(haversine(state.loc.lat,state.loc.lon,s.anchor[0],s.anchor[1])*10)/10});
@@ -1239,7 +1244,9 @@ function analyze() {
     h += '<span style="font-size:14px;font-weight:700;color:var(--text)">'+s.flag+' '+s.name+'</span>';
     h += '</div><div style="font-size:11px;color:var(--text3)">'+s.distKm+' km '+String.fromCharCode(183)+' '+s.note+'</div></div>';
     h += '<div style="text-align:right;flex-shrink:0">';
+    var hasReal = s.lines.some(function(l){return l.isReal;});
     h += '<div style="font-size:17px;font-weight:800;color:'+(isBest?'var(--green)':'var(--text2)')+'">EUR '+s.total.toFixed(2)+'</div>';
+    if (hasReal) h += '<div style="font-size:10px;color:#30D158;font-weight:600">✓ real prices</div>';
     if (s.saved>0.01) h += '<div style="font-size:11px;color:#4ade80">-EUR '+s.saved.toFixed(2)+'</div>';
     h += '<div style="font-size:10px;color:var(--text3)">'+s.lines.filter(function(l){return l.hasOffer;}).length+'/'+s.lines.length+' offers</div>';
     h += '</div></div>';
@@ -1773,20 +1780,27 @@ var realPrices = {};
 var pricesLoaded = false;
 
 async function loadRealPrices() {
-  var today = new Date().toISOString().split('T')[0];
-  var data = await sbGet('prices?select=*&valid_until=gte.'+today+'&order=created_at.desc');
-  realPrices = {};
-  data.forEach(function(p) {
-    // Index by product_id + store
-    var key1 = p.product_id + '_' + p.store_id;
-    if (!realPrices[key1]) realPrices[key1] = p;
-    // Also index by normalized product_name + store (for fuzzy match)
-    var normName = p.product_name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').substring(0,30);
-    var key2 = normName + '_' + p.store_id;
-    if (!realPrices[key2]) realPrices[key2] = p;
-  });
-  pricesLoaded = true;
-  console.log('Loaded '+data.length+' real prices from Supabase');
+  try {
+    var today = new Date().toISOString().split('T')[0];
+    var data = await sbGet('prices?select=*&valid_until=gte.'+today+'&order=created_at.desc');
+    realPrices = {};
+    data.forEach(function(p) {
+      // Key 1: exact product_id + store_id
+      var key1 = p.product_id.trim() + '_' + p.store_id.trim();
+      if (!realPrices[key1]) realPrices[key1] = p;
+      // Key 2: normalized name (first 30 chars) + store_id
+      var normName = (p.product_name||'').toLowerCase()
+        .replace(/\([^)]*\)/g,'') // remove (qty) part
+        .replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').substring(0,30);
+      var key2 = normName + '_' + p.store_id.trim();
+      if (!realPrices[key2]) realPrices[key2] = p;
+    });
+    pricesLoaded = true;
+    console.log('[SmartShopper] Loaded '+data.length+' real prices. Keys: '+Object.keys(realPrices).join(', ').substring(0,100));
+  } catch(e) {
+    console.error('[SmartShopper] Failed to load prices:', e);
+    pricesLoaded = true; // continue without real prices
+  }
 }
 
 // Submit community price report
@@ -1856,7 +1870,13 @@ async function submitReport() {
 }
 
 function showNewsletter() {
-  document.getElementById('newsletterModal').style.display = 'flex';
+  var m = document.getElementById('newsletterModal');
+  m.style.display = 'flex';
+  m.scrollTop = 0;
+  setTimeout(function(){ 
+    var inp = document.getElementById('newsletterEmail');
+    if (inp) inp.focus();
+  }, 200);
 }
 
 function closeNewsletter() {
