@@ -32,7 +32,7 @@
   --yellow:#F59E0B;
 }
 html{font-size:16px;scroll-padding-bottom:90px}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Helvetica,sans-serif;min-height:100vh;padding-bottom:100px;-webkit-font-smoothing:antialiased;line-height:1.5}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Helvetica,sans-serif;min-height:100vh;padding-bottom:120px;-webkit-font-smoothing:antialiased;line-height:1.5}
 input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Helvetica,sans-serif;font-size:16px}
 
 /* ── HEADER ── */
@@ -41,7 +41,7 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'SF Pr
   background:rgba(248,250,252,0.95);
   backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
   border-bottom:1px solid var(--border2);
-  padding:12px 16px 10px;
+  padding:14px 16px 12px;
   display:flex;align-items:center;gap:10px;
   box-shadow:0 1px 8px rgba(15,23,42,0.06);
 }
@@ -73,11 +73,13 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'SF Pr
 }
 .nav-btn{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:3px;background:none;border:none;color:var(--text3);cursor:pointer;
-  font-size:10px;font-weight:500;padding:5px 0;min-height:48px;
+  gap:4px;background:none;border:none;color:var(--text3);cursor:pointer;
+  font-size:12px;font-weight:600;padding:8px 0;min-height:60px;
   font-family:inherit;transition:color 0.15s;
+  -webkit-tap-highlight-color:rgba(22,163,74,0.2);
+  touch-action:manipulation;
 }
-.nav-btn .ico{font-size:20px;line-height:1;transition:transform 0.2s}
+.nav-btn .ico{font-size:24px;line-height:1;transition:transform 0.2s}
 .nav-btn.active{color:var(--green)}
 .nav-btn.active .ico{transform:scale(1.15)}
 
