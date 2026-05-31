@@ -374,54 +374,6 @@ input[type=range]{accent-color:var(--green);width:100%;cursor:pointer}
   <div id="scanResult" style="margin-top:8px"></div>
 </div>
 
-<!-- HISTORY TAB -->
-
-<div class="scan-step" id="mainHistory">
-  <div style="padding-top:4px;margin-bottom:16px">
-    <div style="font-size:20px;font-weight:700" id="historyTitle">🕐 Scan History</div>
-    <div style="font-size:13px;color:var(--text3);margin-top:2px" id="historySub">Your recently scanned products</div>
-  </div>
-  <div id="scanHistoryList"></div>
-</div>
-
-<!-- NEWSLETTER MODAL -->
-
-<div id="newsletterModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:flex-start;justify-content:center;padding-top:60px;overflow-y:auto">
-  <div style="background:#1C1C1E;border-radius:18px;padding:24px 20px;width:calc(100% - 32px);max-width:480px;margin:0 auto">
-    <div style="font-size:20px;font-weight:700;margin-bottom:6px">📧 Weekly Deals Newsletter</div>
-    <div style="font-size:14px;color:#A1A1A6;margin-bottom:18px">Get the best cross-border deals every Monday — free!</div>
-    <input type="email" id="newsletterEmail" placeholder="your@email.com" style="width:100%;background:#2C2C2E;border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:#f5f5f7;padding:14px 16px;font-size:16px;outline:none;margin-bottom:10px">
-    <div style="display:flex;gap:8px">
-      <button onclick="submitNewsletter()" style="flex:1;background:#30D1C8;color:#000;border:none;border-radius:12px;padding:14px 0;font-size:16px;font-weight:700;cursor:pointer">Subscribe Free</button>
-      <button onclick="closeNewsletter()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#A1A1A6;border-radius:12px;padding:14px 16px;font-size:14px;cursor:pointer">Later</button>
-    </div>
-    <div id="newsletterStatus" style="font-size:13px;text-align:center;margin-top:10px;min-height:18px"></div>
-  </div>
-</div>
-
-<!-- PRICE REPORT MODAL -->
-
-<div id="reportModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:flex-start;justify-content:center;padding-top:60px;overflow-y:auto">
-  <div style="background:#1C1C1E;border-radius:18px;padding:22px 20px;width:calc(100% - 32px);max-width:480px;margin:0 auto 40px">
-    <div style="font-size:18px;font-weight:700;margin-bottom:4px">👁 Report a Price</div>
-    <div style="font-size:13px;color:#A1A1A6;margin-bottom:16px" id="reportStoreLabel"></div>
-    <label style="font-size:13px;color:#A1A1A6;display:block;margin-bottom:6px">Product name</label>
-    <input type="text" id="reportProduct" placeholder="e.g. Salmon Fillet" style="width:100%;background:#2C2C2E;border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:#f5f5f7;padding:13px 16px;font-size:16px;outline:none;margin-bottom:10px">
-    <label style="font-size:13px;color:#A1A1A6;display:block;margin-bottom:6px">Price you saw</label>
-    <div style="display:flex;gap:8px;margin-bottom:16px">
-      <select id="reportCurrency" style="background:#2C2C2E;border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:#f5f5f7;padding:13px 12px;font-size:16px;outline:none;min-width:90px">
-        <option value="EUR">EUR</option>
-        <option value="CHF">CHF</option>
-      </select>
-      <input type="number" id="reportPriceInput" placeholder="3.99" step="0.01" style="flex:1;background:#2C2C2E;border:1px solid rgba(255,255,255,0.1);border-radius:12px;color:#f5f5f7;padding:13px 16px;font-size:16px;outline:none">
-    </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="submitReport()" style="flex:1;background:#FFD60A;color:#000;border:none;border-radius:12px;padding:14px 0;font-size:16px;font-weight:700;cursor:pointer;min-height:50px">Send Report</button>
-      <button onclick="closeReport()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#A1A1A6;border-radius:12px;padding:14px 16px;font-size:14px;cursor:pointer;min-height:50px">Cancel</button>
-    </div>
-  </div>
-</div>
-
 <!-- PRICEWATCH TAB -->
 
 <div class="scan-step" id="mainPrice">
@@ -563,14 +515,11 @@ input[type=range]{accent-color:var(--green);width:100%;cursor:pointer}
   <button class="nav-btn" id="navScan" onclick="switchMainTab('scan')">
     <span class="nav-icon">📷</span><span id="navScanLbl">NutriScan</span>
   </button>
-  <button class="nav-btn" id="navHistory" onclick="switchMainTab('history')">
-    <span class="nav-icon">🕐</span><span id="navHistoryLbl">History</span>
+  <button class="nav-btn" id="navReceipt" onclick="switchMainTab('receipt')">
+    <span class="nav-icon">🧾</span><span id="navReceiptLbl">Receipt</span>
   </button>
   <button class="nav-btn" id="navPrice" onclick="switchMainTab('price')">
     <span class="nav-icon">💰</span><span id="navPriceLbl">PriceWatch</span>
-  </button>
-  <button class="nav-btn" id="navReceipt" onclick="switchMainTab('receipt')">
-    <span class="nav-icon">🧾</span><span id="navReceiptLbl">Receipt</span>
   </button>
 </nav>
 
@@ -766,8 +715,6 @@ function applyTranslations() {
   var ml = document.getElementById('manualLabel'); if (ml) ml.textContent = t('manual_label');
   var sl2 = document.getElementById('scanLabel'); if (sl2 && !scanState.active) sl2.textContent = t('camera_ready');
   var sbt = document.getElementById('scanBtnText'); if (sbt && !scanState.active) sbt.textContent = t('start_camera');
-  var ht = document.getElementById('historyTitle'); if (ht) ht.textContent = t('history_title');
-  var hs = document.getElementById('historySub'); if (hs) hs.textContent = t('history_sub');
   var pt = document.getElementById('pwTitle'); if (pt) pt.textContent = t('pw_title');
   var ps = document.getElementById('pwSub'); if (ps) ps.textContent = t('pw_sub');
   var pal = document.getElementById('pwAddLabel'); if (pal) pal.textContent = t('pw_add_label');
@@ -781,7 +728,6 @@ function applyTranslations() {
   var nrl = document.getElementById('navReceiptLbl'); if (nrl) nrl.textContent = t('nav_receipt');
   var nsl = document.getElementById('navShopperLbl'); if (nsl) nsl.textContent = t('nav_shopper');
   var nscl = document.getElementById('navScanLbl'); if (nscl) nscl.textContent = t('nav_scan');
-  var nhl = document.getElementById('navHistoryLbl'); if (nhl) nhl.textContent = t('nav_history');
   var npl = document.getElementById('navPriceLbl'); if (npl) npl.textContent = t('nav_price');
   var sll = document.getElementById('savedLocLabel'); if (sll) sll.textContent = t('saved_loc');
   var usb = document.getElementById('useSavedBtn'); if (usb) usb.textContent = t('use_saved');
@@ -967,12 +913,10 @@ function switchMainTab(tab) {
   // Hide all
   var sc = document.getElementById('shopperContainer');
   var ms = document.getElementById('mainScan');
-  var mh = document.getElementById('mainHistory');
   var mp = document.getElementById('mainPrice');
   var mr = document.getElementById('mainReceipt');
   if (sc) sc.style.display = 'none';
   if (ms) ms.style.display = 'none';
-  if (mh) mh.style.display = 'none';
   if (mp) mp.style.display = 'none';
   if (mr) mr.style.display = 'none';
 
@@ -981,9 +925,6 @@ function switchMainTab(tab) {
     if (sc) sc.style.display = 'block';
   } else if (tab === 'scan') {
     if (ms) ms.style.display = 'block';
-  } else if (tab === 'history') {
-    if (mh) mh.style.display = 'block';
-    renderScanHistory();
   } else if (tab === 'price') {
     if (mp) mp.style.display = 'block';
     pwRender();
@@ -992,7 +933,7 @@ function switchMainTab(tab) {
   }
 
   // Update nav
-  ['shopper','scan','history','price','receipt'].forEach(function(t) {
+  ['shopper','scan','receipt','price'].forEach(function(t) {
     var btn = document.getElementById('nav' + t.charAt(0).toUpperCase() + t.slice(1));
     if (btn) btn.classList.toggle('active', t === tab);
   });
