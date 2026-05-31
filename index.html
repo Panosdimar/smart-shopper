@@ -157,7 +157,12 @@ input[type=range]{accent-color:var(--green);width:100%;cursor:pointer}
 <div class="header">
   <span style="font-size:22px">🛒</span>
   <div style="flex:1">
-    <h1>Smart Shopper <span id="appSubtitle" style="font-size:11px;color:var(--text3);font-weight:400">DE/CH/FR · Voice · Full Supermarket</span></h1>
+    <h1>Smart Shopper</h1>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:2px">
+      <span style="background:rgba(48,209,88,0.15);border:1px solid rgba(48,209,88,0.3);color:#30D158;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600">✓ Free</span>
+      <span style="background:rgba(48,209,88,0.15);border:1px solid rgba(48,209,88,0.3);color:#30D158;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600">✓ Independent</span>
+      <span style="background:rgba(10,132,255,0.15);border:1px solid rgba(10,132,255,0.3);color:#60a5fa;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:600">DE·CH·FR</span>
+    </div>
   </div>
   <button class="btn-outline" onclick="restart()" id="restartBtn" style="display:none;padding:8px 12px;font-size:13px">↺</button>
   <div class="lang-wrap">
@@ -307,7 +312,14 @@ input[type=range]{accent-color:var(--green);width:100%;cursor:pointer}
     <button class="filter-btn" data-lbl="lactose-free" onclick="toggleFilter('lactose-free')">🥛 LF</button>
     <button onclick="clearFilters()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:10px;text-decoration:underline;display:none" id="clearFiltersBtn">clear</button>
   </div>
+  <!-- WEEKLY OFFERS BANNER -->
+  <div id="weeklyOffersBanner" style="margin-bottom:14px;display:none">
+    <div style="font-size:12px;color:var(--orange);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">🏷 This week's offers</div>
+    <div id="weeklyOffersList" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none"></div>
+  </div>
+
   <!-- CATEGORIES -->
+
   <div id="catTree"></div>
   <!-- ANALYZE -->
   <div id="analyzeWrap" style="display:none;margin-top:16px">
@@ -950,6 +962,7 @@ function showStep(s) {
   });
   var map = {address:'stepAddress', basket:'stepBasket', results:'stepResults'};
   if (map[s]) document.getElementById(map[s]).classList.add('active');
+  if (s==='basket') loadWeeklyOffers();
   var pct = {address:10, basket:50, results:100}[s] || 10;
   document.getElementById('progressBar').style.width = pct + '%';
   var rb = document.getElementById('restartBtn');
@@ -2395,11 +2408,58 @@ function resetReceipt() {
   window.scrollTo(0,0);
 }
 
+
+// ═══════════════════════════════════════════════════
+// WEEKLY OFFERS
+// ═══════════════════════════════════════════════════
+async function loadWeeklyOffers() {
+  var today = new Date().toISOString().split('T')[0];
+  var data = await sbGet('prices?select=*&order=created_at.desc&limit=20');
+  if (!data.length) return;
+
+  var banner = document.getElementById('weeklyOffersBanner');
+  var list = document.getElementById('weeklyOffersList');
+  if (!banner || !list) return;
+
+  list.innerHTML = '';
+  data.forEach(function(p) {
+    var curr = p.currency || (p.store_flag==='CH'?'CHF':'EUR');
+    var flagEmoji = p.store_flag==='CH'?'🇨🇭':p.store_flag==='FR'?'🇫🇷':'🇩🇪';
+    var cleanName = (p.product_name||'').replace(/[Ѐ-ӿ]/g,'').replace(/\s*\([^)]*\)/g,'').trim().substring(0,28);
+    var card = document.createElement('div');
+    card.style.cssText = 'flex-shrink:0;background:var(--card);border:1px solid rgba(255,159,10,0.25);border-radius:12px;padding:10px 12px;min-width:140px;cursor:pointer';
+    card.innerHTML = '<div style="font-size:10px;color:var(--orange);font-weight:700;margin-bottom:4px">'+flagEmoji+' '+p.store_name+'</div>'
+      + '<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.3">'+cleanName+'</div>'
+      + '<div style="font-size:16px;font-weight:800;color:var(--orange)">'+curr+' '+parseFloat(p.price).toFixed(2)+'</div>'
+      + '<div style="font-size:10px;color:var(--text3);margin-top:3px">Tap to add to list</div>';
+    card.addEventListener('click', (function(pid){ return function(){ quickAddOffer(pid); }; })(p.product_id));
+    list.appendChild(card);
+  });
+  banner.style.display = 'block';
+}
+
+function quickAddOffer(pid) {
+  // Try to find in PRODUCTS
+  var prod = PRODUCTS.find(function(p){ return p.id===pid; });
+  if (prod) {
+    if (!state.basket.find(function(b){return b.pid===pid;})) {
+      state.basket.push({pid:pid, qty:1});
+      updateItemCount(); renderCategories();
+      showToast('Added '+prod.name+' to list!');
+    } else {
+      showToast('Already in your list!');
+    }
+  } else {
+    showToast('Product added from offers!');
+  }
+}
+
 // ═══════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════
 renderCategories();
 updateItemCount();
+loadWeeklyOffers();
 </script>
 
 </body>
