@@ -241,9 +241,10 @@ input,button,select,textarea{font-family:-apple-system,BlinkMacSystemFont,'SF Pr
 .offer-tap{font-size:10px;color:var(--text3);margin-top:3px}
 
 /* ── MODALS ── */
-.modal-wrap{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);z-index:9999;align-items:flex-start;justify-content:center;padding-top:60px;overflow-y:auto}
+.modal-wrap{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.6);z-index:9999;align-items:center;justify-content:center;padding:20px 16px;overflow-y:auto}
 .modal-wrap.show{display:flex}
-.modal-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:22px 20px;width:calc(100% - 32px);max-width:480px;margin:0 auto 40px}
+.modal-wrap.show{display:flex}
+.modal-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:24px 20px;width:calc(100% - 32px);max-width:480px;margin:auto;box-shadow:0 8px 40px rgba(15,23,42,0.15)}
 
 /* ── TOAST ── */
 .toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;border:none;border-radius:20px;padding:10px 18px;font-size:14px;font-weight:500;z-index:9999;box-shadow:0 8px 32px rgba(15,23,42,0.25);transition:opacity 0.3s;pointer-events:none;white-space:nowrap}
@@ -665,9 +666,9 @@ video{width:100%;height:100%;object-fit:cover;display:block}
     <div style="font-size:20px;font-weight:700;margin-bottom:5px">📧 Weekly Deals</div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Best cross-border prices every Monday — free!</div>
     <input type="email" class="inp" id="newsletterEmail" placeholder="your@email.com" style="margin-bottom:10px">
-    <div style="display:flex;gap:8px">
-      <button onclick="submitNewsletter()" class="btn-primary" style="flex:1">Subscribe Free</button>
-      <button onclick="closeNewsletter()" class="btn-ghost" style="padding:15px 16px">Later</button>
+    <div style="display:flex;gap:10px">
+      <button onclick="submitNewsletter()" style="flex:2;background:var(--green);color:#fff;border:none;border-radius:14px;padding:17px 0;font-size:17px;font-weight:700;cursor:pointer;min-height:56px;touch-action:manipulation">Subscribe Free</button>
+      <button onclick="closeNewsletter()" style="flex:1;background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:14px;padding:17px 0;font-size:16px;cursor:pointer;min-height:56px;touch-action:manipulation">Later</button>
     </div>
     <div id="newsletterStatus" style="font-size:12px;text-align:center;margin-top:10px;min-height:16px"></div>
   </div>
@@ -681,15 +682,18 @@ video{width:100%;height:100%;object-fit:cover;display:block}
     <input type="text" class="inp" id="reportProduct" placeholder="e.g. Salmon Fillet" style="margin-bottom:10px">
     <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:5px">Price you saw</label>
     <div style="display:flex;gap:8px;margin-bottom:16px">
-      <select class="inp" id="reportCurrency" style="min-width:90px;padding:12px">
+      <select class="inp" id="reportCurrency" style="width:85px;padding:13px 8px;flex-shrink:0;font-size:15px">
         <option value="EUR">EUR</option>
         <option value="CHF">CHF</option>
       </select>
-      <input type="number" class="inp" id="reportPriceInput" placeholder="3.99" step="0.01" style="flex:1">
+      <div style="flex:1;position:relative;display:flex;align-items:center">
+        <input type="number" class="inp" id="reportPriceInput" placeholder="3.99" step="0.01" inputmode="decimal" style="width:100%;font-size:22px;font-weight:700;padding-right:44px">
+        <button onclick="document.getElementById('reportPriceInput').value=''" style="position:absolute;right:10px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:4px;touch-action:manipulation">✕</button>
+      </div>
     </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="submitReport()" class="btn-primary" style="flex:1;background:var(--yellow);color:#000">Send Report</button>
-      <button onclick="closeReport()" class="btn-ghost" style="padding:15px 16px">Cancel</button>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button onclick="submitReport()" style="flex:1;background:var(--yellow);color:#000;border:none;border-radius:14px;padding:17px 0;font-size:17px;font-weight:700;cursor:pointer;min-height:56px;touch-action:manipulation">Send Report</button>
+      <button onclick="closeReport()" style="flex:1;background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:14px;padding:17px 0;font-size:17px;font-weight:600;cursor:pointer;min-height:56px;touch-action:manipulation">Cancel</button>
     </div>
   </div>
 </div>
@@ -699,15 +703,18 @@ video{width:100%;height:100%;object-fit:cover;display:block}
     <div style="font-size:18px;font-weight:700;margin-bottom:5px">💰 Monthly Budget</div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Set your monthly grocery budget</div>
     <div style="display:flex;gap:8px;margin-bottom:16px">
-      <select class="inp" id="budgetCurrency" style="min-width:90px;padding:12px">
+      <select class="inp" id="budgetCurrency" style="width:85px;padding:13px 8px;flex-shrink:0;font-size:15px">
         <option value="EUR">EUR</option>
         <option value="CHF">CHF</option>
       </select>
-      <input type="number" class="inp" id="budgetInput" placeholder="600" min="0" step="10" style="flex:1">
+      <div style="flex:1;position:relative;display:flex;align-items:center">
+        <input type="number" class="inp" id="budgetInput" placeholder="600" min="0" step="10" style="width:100%;padding-right:44px">
+        <button onclick="document.getElementById('budgetInput').value=''" style="position:absolute;right:10px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:4px;touch-action:manipulation">✕</button>
+      </div>
     </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="saveBudget()" class="btn-primary" style="flex:1">Save</button>
-      <button onclick="closeBudgetModal()" class="btn-ghost" style="padding:15px 16px">Cancel</button>
+    <div style="display:flex;gap:10px">
+      <button onclick="saveBudget()" style="flex:2;background:var(--green);color:#fff;border:none;border-radius:14px;padding:16px 0;font-size:17px;font-weight:700;cursor:pointer;min-height:54px;touch-action:manipulation">Save</button>
+      <button onclick="closeBudgetModal()" style="flex:1;background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:14px;padding:16px 0;font-size:17px;cursor:pointer;min-height:54px;touch-action:manipulation">Cancel</button>
     </div>
   </div>
 </div>
