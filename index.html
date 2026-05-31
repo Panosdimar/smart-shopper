@@ -270,7 +270,7 @@ video{width:100%;height:100%;object-fit:cover;display:block}
 
 <!-- HEADER -->
 
-<div class="hdr">
+<div class="hdr" style="padding-top:max(52px,calc(env(safe-area-inset-top) + 14px))">
   <span style="font-size:22px">🛒</span>
   <div style="flex:1">
     <div class="hdr-logo">Smart<span>Shopper</span></div>
@@ -661,60 +661,92 @@ video{width:100%;height:100%;object-fit:cover;display:block}
 
 <!-- ═══ MODALS ═══ -->
 
-<div class="modal-wrap" id="newsletterModal">
-  <div class="modal-box">
-    <div style="font-size:20px;font-weight:700;margin-bottom:5px">📧 Weekly Deals</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Best cross-border prices every Monday — free!</div>
-    <input type="email" class="inp" id="newsletterEmail" placeholder="your@email.com" style="margin-bottom:10px">
+<!-- NEWSLETTER -->
+
+<div id="newsletterModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(15,23,42,0.7);align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:20px;padding:24px 20px;width:100%;max-width:440px;box-shadow:0 8px 40px rgba(15,23,42,0.2)">
+    <div style="font-size:20px;font-weight:700;margin-bottom:6px">📧 Weekly Deals</div>
+    <div style="font-size:14px;color:#475569;margin-bottom:16px">Best cross-border prices every Monday — free!</div>
+    <input type="email" id="newsletterEmail" placeholder="your@email.com"
+      style="width:100%;background:#F1F5F9;border:1px solid #E2E8F0;border-radius:12px;color:#0F172A;padding:14px 16px;font-size:16px;outline:none;margin-bottom:12px">
     <div style="display:flex;gap:10px">
-      <button onclick="submitNewsletter()" style="flex:2;background:var(--green);color:#fff;border:none;border-radius:14px;padding:17px 0;font-size:17px;font-weight:700;cursor:pointer;min-height:56px;touch-action:manipulation">Subscribe Free</button>
-      <button onclick="closeNewsletter()" style="flex:1;background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:14px;padding:17px 0;font-size:16px;cursor:pointer;min-height:56px;touch-action:manipulation">Later</button>
+      <button onclick="submitNewsletter()"
+        style="flex:2;background:#16A34A;color:#fff;border:none;border-radius:14px;padding:16px 0;font-size:17px;font-weight:700;cursor:pointer;min-height:54px">
+        Subscribe Free
+      </button>
+      <button onclick="closeNewsletter()"
+        style="flex:1;background:#F1F5F9;border:1px solid #E2E8F0;color:#475569;border-radius:14px;padding:16px 0;font-size:16px;cursor:pointer;min-height:54px">
+        Later
+      </button>
     </div>
-    <div id="newsletterStatus" style="font-size:12px;text-align:center;margin-top:10px;min-height:16px"></div>
+    <div id="newsletterStatus" style="font-size:13px;text-align:center;margin-top:10px;min-height:16px"></div>
   </div>
 </div>
 
-<div class="modal-wrap" id="reportModal">
-  <div class="modal-box">
+<!-- REPORT PRICE -->
+
+<div id="reportModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(15,23,42,0.7);align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:20px;padding:24px 20px;width:100%;max-width:440px;box-shadow:0 8px 40px rgba(15,23,42,0.2)">
     <div style="font-size:18px;font-weight:700;margin-bottom:4px">👁 Report a Price</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:14px" id="reportStoreLabel"></div>
-    <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:5px">Product name</label>
-    <input type="text" class="inp" id="reportProduct" placeholder="e.g. Salmon Fillet" style="margin-bottom:10px">
-    <label style="font-size:12px;color:var(--text3);display:block;margin-bottom:5px">Price you saw</label>
-    <div style="display:flex;gap:8px;margin-bottom:16px">
-      <select class="inp" id="reportCurrency" style="width:85px;padding:13px 8px;flex-shrink:0;font-size:15px">
+    <div style="font-size:13px;color:#475569;margin-bottom:16px" id="reportStoreLabel"></div>
+    <label style="font-size:13px;color:#94A3B8;display:block;margin-bottom:6px;font-weight:600">Product name</label>
+    <input type="text" id="reportProduct" placeholder="e.g. Salmon Fillet"
+      style="width:100%;background:#F1F5F9;border:1px solid #E2E8F0;border-radius:12px;color:#0F172A;padding:14px 16px;font-size:16px;outline:none;margin-bottom:12px">
+    <label style="font-size:13px;color:#94A3B8;display:block;margin-bottom:6px;font-weight:600">Price you saw</label>
+    <div style="display:flex;gap:8px;margin-bottom:20px">
+      <select id="reportCurrency"
+        style="width:85px;background:#F1F5F9;border:1px solid #E2E8F0;border-radius:12px;color:#0F172A;padding:14px 8px;font-size:15px;outline:none;flex-shrink:0">
         <option value="EUR">EUR</option>
         <option value="CHF">CHF</option>
       </select>
-      <div style="flex:1;position:relative;display:flex;align-items:center">
-        <input type="number" class="inp" id="reportPriceInput" placeholder="3.99" step="0.01" inputmode="decimal" style="width:100%;font-size:22px;font-weight:700;padding-right:44px">
-        <button onclick="document.getElementById('reportPriceInput').value=''" style="position:absolute;right:10px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:4px;touch-action:manipulation">✕</button>
+      <div style="flex:1;position:relative">
+        <input type="number" id="reportPriceInput" placeholder="3.99" step="0.01" inputmode="decimal"
+          style="width:100%;background:#F1F5F9;border:1px solid #E2E8F0;border-radius:12px;color:#0F172A;padding:14px 44px 14px 16px;font-size:22px;font-weight:700;outline:none">
+        <button onclick="document.getElementById('reportPriceInput').value=''"
+          style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#94A3B8;cursor:pointer;font-size:18px;padding:4px;line-height:1">✕</button>
       </div>
     </div>
-    <div style="display:flex;gap:10px;margin-top:4px">
-      <button onclick="submitReport()" style="flex:1;background:var(--yellow);color:#000;border:none;border-radius:14px;padding:17px 0;font-size:17px;font-weight:700;cursor:pointer;min-height:56px;touch-action:manipulation">Send Report</button>
-      <button onclick="closeReport()" style="flex:1;background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:14px;padding:17px 0;font-size:17px;font-weight:600;cursor:pointer;min-height:56px;touch-action:manipulation">Cancel</button>
+    <div style="display:flex;gap:10px">
+      <button onclick="submitReport()"
+        style="flex:1;background:#F59E0B;color:#000;border:none;border-radius:14px;padding:17px 0;font-size:18px;font-weight:700;cursor:pointer;min-height:58px">
+        Send Report
+      </button>
+      <button onclick="closeReport()"
+        style="flex:1;background:#F1F5F9;border:1px solid #E2E8F0;color:#475569;border-radius:14px;padding:17px 0;font-size:18px;font-weight:600;cursor:pointer;min-height:58px">
+        Cancel
+      </button>
     </div>
   </div>
 </div>
 
-<div class="modal-wrap" id="budgetModal">
-  <div class="modal-box">
+<!-- BUDGET -->
+
+<div id="budgetModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(15,23,42,0.7);align-items:center;justify-content:center;padding:20px">
+  <div style="background:#fff;border-radius:20px;padding:24px 20px;width:100%;max-width:440px;box-shadow:0 8px 40px rgba(15,23,42,0.2)">
     <div style="font-size:18px;font-weight:700;margin-bottom:5px">💰 Monthly Budget</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:16px">Set your monthly grocery budget</div>
-    <div style="display:flex;gap:8px;margin-bottom:16px">
-      <select class="inp" id="budgetCurrency" style="width:85px;padding:13px 8px;flex-shrink:0;font-size:15px">
+    <div style="font-size:14px;color:#475569;margin-bottom:16px">Set your monthly grocery budget</div>
+    <div style="display:flex;gap:8px;margin-bottom:20px">
+      <select id="budgetCurrency"
+        style="width:85px;background:#F1F5F9;border:1px solid #E2E8F0;border-radius:12px;color:#0F172A;padding:14px 8px;font-size:15px;outline:none;flex-shrink:0">
         <option value="EUR">EUR</option>
         <option value="CHF">CHF</option>
       </select>
-      <div style="flex:1;position:relative;display:flex;align-items:center">
-        <input type="number" class="inp" id="budgetInput" placeholder="600" min="0" step="10" style="width:100%;padding-right:44px">
-        <button onclick="document.getElementById('budgetInput').value=''" style="position:absolute;right:10px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:4px;touch-action:manipulation">✕</button>
+      <div style="flex:1;position:relative">
+        <input type="number" id="budgetInput" placeholder="600" min="0" step="10"
+          style="width:100%;background:#F1F5F9;border:1px solid #E2E8F0;border-radius:12px;color:#0F172A;padding:14px 44px 14px 16px;font-size:22px;font-weight:700;outline:none">
+        <button onclick="document.getElementById('budgetInput').value=''"
+          style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#94A3B8;cursor:pointer;font-size:18px;padding:4px;line-height:1">✕</button>
       </div>
     </div>
     <div style="display:flex;gap:10px">
-      <button onclick="saveBudget()" style="flex:2;background:var(--green);color:#fff;border:none;border-radius:14px;padding:16px 0;font-size:17px;font-weight:700;cursor:pointer;min-height:54px;touch-action:manipulation">Save</button>
-      <button onclick="closeBudgetModal()" style="flex:1;background:var(--card2);border:1px solid var(--border);color:var(--text2);border-radius:14px;padding:16px 0;font-size:17px;cursor:pointer;min-height:54px;touch-action:manipulation">Cancel</button>
+      <button onclick="saveBudget()"
+        style="flex:2;background:#16A34A;color:#fff;border:none;border-radius:14px;padding:17px 0;font-size:18px;font-weight:700;cursor:pointer;min-height:58px">
+        Save
+      </button>
+      <button onclick="closeBudgetModal()"
+        style="flex:1;background:#F1F5F9;border:1px solid #E2E8F0;color:#475569;border-radius:14px;padding:17px 0;font-size:17px;cursor:pointer;min-height:58px">
+        Cancel
+      </button>
     </div>
   </div>
 </div>
@@ -2256,7 +2288,7 @@ function showReportModal(btn) {
 }
 
 function closeReport() {
-  document.getElementById('reportModal').classList.remove('show');
+  document.getElementById('reportModal').style.display='none';
 }
 
 async function submitReport() {
@@ -2280,7 +2312,7 @@ function showNewsletter() {
 }
 
 function closeNewsletter() {
-  document.getElementById('newsletterModal').classList.remove('show');
+  document.getElementById('newsletterModal').style.display='none';
   try { localStorage.setItem('nl_dismissed','1'); } catch(e) {}
 }
 
@@ -2688,10 +2720,10 @@ try { var _b = localStorage.getItem('ss_budget'); if(_b) budget = JSON.parse(_b)
 function showBudgetEdit() {
   document.getElementById('budgetInput').value = budget.amount || '';
   document.getElementById('budgetCurrency').value = budget.currency || 'EUR';
-  document.getElementById('budgetModal').classList.add('show');
+  document.getElementById('budgetModal').style.display='flex';
 }
 function closeBudgetModal() {
-  document.getElementById('budgetModal').classList.remove('show');
+  document.getElementById('budgetModal').style.display='none';
 }
 function saveBudget() {
   budget.amount = parseFloat(document.getElementById('budgetInput').value)||0;
