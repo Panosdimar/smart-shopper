@@ -151,6 +151,28 @@ input::placeholder{color:#6E6E73}
 </select>
 <label>Valid until</label>
 <input type="date" id="validUntil">
+<div style="display:flex;align-items:center;gap:10px;margin-top:14px;background:rgba(255,214,10,0.08);border:1px solid rgba(255,214,10,0.2);border-radius:10px;padding:12px 14px;cursor:pointer" onclick="document.getElementById('isSponsoredCheck').click()">
+  <input type="checkbox" id="isSponsoredCheck" style="width:20px;height:20px;cursor:pointer;accent-color:#F59E0B">
+  <div>
+    <div style="font-size:15px;font-weight:700;color:#F59E0B">⭐ Sponsored offer</div>
+    <div style="font-size:12px;color:#6E6E73;margin-top:2px">Shows in "This week's offers" banner in the app</div>
+  </div>
+</div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;background:#1a2a1a;border:1px solid rgba(22,163,74,0.3);border-radius:12px;padding:14px 16px;margin-top:14px">
+  <div>
+    <div style="font-size:15px;font-weight:700;color:#30D158">⭐ Sponsored Offer</div>
+    <div style="font-size:12px;color:#6E6E73;margin-top:2px">Show in Weekly Offers section of the app</div>
+  </div>
+  <label style="position:relative;display:inline-block;width:50px;height:28px;cursor:pointer">
+    <input type="checkbox" id="isSponsoredToggle" style="opacity:0;width:0;height:0">
+    <span id="sponsoredSlider" style="position:absolute;inset:0;background:#3a3a3c;border-radius:28px;transition:0.3s;display:flex;align-items:center;padding:3px"
+      onclick="toggleSponsored()">
+      <span id="sponsoredKnob" style="width:22px;height:22px;border-radius:50%;background:#fff;transition:0.3s;margin-left:0px;display:block"></span>
+    </span>
+  </label>
+</div>
+
 <button class="btn" onclick="submitPrice()">💾 Save Price</button>
 <div class="status" id="priceStatus"></div>
 ```
@@ -236,8 +258,9 @@ async function loadPrices() {
           <div style="font-size:12px;color:#6E6E73">${p.store_name} · until ${p.valid_until}</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <span class="badge ${flagClass}">${p.store_flag}</span>
+          ${p.is_sponsored ? '<span style="background:rgba(255,214,10,0.15);color:#F59E0B;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;margin-right:4px">⭐ Sponsored</span>' : ''}<span class="badge ${flagClass}">${p.store_flag}</span>
           <span style="font-weight:700;color:#30D1C8">${p.currency||'EUR'} ${parseFloat(p.price).toFixed(2)}</span>
+          ${p.is_sponsored ? '<span style="background:rgba(22,163,74,0.15);color:#16A34A;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;margin-left:6px">⭐ SPONSORED</span>' : ''}
           <button class="btn-sm-red" onclick="deletePrice(${p.id})">✕</button>
         </div>
       </div>`;
@@ -250,6 +273,20 @@ function autoSelectCurrency() {
   const flag = storeVal[2] || 'DE';
   const curr = document.getElementById('currencySelect');
   if (curr) curr.value = flag === 'CH' ? 'CHF' : 'EUR';
+}
+
+function toggleSponsored() {
+  var cb = document.getElementById('isSponsoredToggle');
+  var slider = document.getElementById('sponsoredSlider');
+  var knob = document.getElementById('sponsoredKnob');
+  cb.checked = !cb.checked;
+  if (cb.checked) {
+    slider.style.background = '#16A34A';
+    knob.style.marginLeft = '22px';
+  } else {
+    slider.style.background = '#3a3a3c';
+    knob.style.marginLeft = '0px';
+  }
 }
 
 async function submitPrice() {
@@ -271,13 +308,17 @@ async function submitPrice() {
     await api('prices', 'POST', {
       product_id: pid, product_name: pname,
       store_id: storeVal[0], store_name: storeVal[1], store_flag: storeVal[2],
-      price: price, unit: unit, currency: currency, valid_until: validUntil, source: 'admin'
+      price: price, unit: unit, currency: currency, valid_until: validUntil,
+      is_sponsored: document.getElementById('isSponsoredCheck').checked,
+      source: 'admin',
+      is_sponsored: document.getElementById('isSponsoredToggle').checked
     });
     statusEl.textContent = '✅ Price saved!';
     statusEl.className = 'status ok'; statusEl.style.display = 'block';
     document.getElementById('prodId').value = '';
     document.getElementById('prodName').value = '';
     document.getElementById('priceInput').value = '';
+    document.getElementById('isSponsoredCheck').checked = false;
     setTimeout(() => { statusEl.style.display='none'; }, 2000);
     loadPrices(); loadStats();
   } catch(e) {
