@@ -1438,6 +1438,8 @@ function renderCategories() {
             var sel = !!state.basket.find(function(b){return b.pid===prod.id;});
             var bItem = state.basket.find(function(b){return b.pid===prod.id;});
             var chip = document.createElement('div'); chip.className = 'prod-chip'+(sel?' sel':'');
+            chip.style.cssText += ';cursor:pointer';
+            chip.addEventListener('click', (function(pid){ return function(e){ if(e.target.classList.contains('qty-btn')) return; toggleItem(pid); }; })(prod.id));
             var lblIcons = prod.labels.map(function(l){ var cfg=LABEL_CFG[l]; return cfg?'<span class="'+cfg.cls+'">'+cfg.icon+'</span>':''; }).join('');
             var qtyHtml = '';
             if (sel && bItem) {
@@ -1446,8 +1448,17 @@ function renderCategories() {
                 + '<span class="qty-val">'+bItem.qty+' '+prod.unit+'</span>'
                 + '<button class="qty-btn" onclick="changeQty(\''+prod.id+'\',1)">+</button></span>';
             }
-            chip.innerHTML = '<span onclick="toggleItem(\''+prod.id+'\')" style="cursor:pointer;display:flex;align-items:center;gap:4px">'
-              + tx(prod.name) + '<span style="font-size:9px;color:var(--text3)">'+prod.unit+'</span>' + lblIcons + '</span>' + qtyHtml;
+            var nameSpan = document.createElement('span');
+            nameSpan.style.cssText = 'cursor:pointer;display:flex;align-items:center;gap:4px;flex:1';
+            nameSpan.innerHTML = tx(prod.name) + '<span style="font-size:9px;color:var(--text3);margin-left:3px">'+prod.unit+'</span>' + lblIcons;
+            nameSpan.addEventListener('click', (function(pid){ return function(){ toggleItem(pid); }; })(prod.id));
+            chip.appendChild(nameSpan);
+            if (qtyHtml) {
+              var qtyDiv = document.createElement('span');
+              qtyDiv.innerHTML = qtyHtml;
+              chip.appendChild(qtyDiv);
+            }
+            var dummy = null; // placeholder
             prodWrap.appendChild(chip);
           });
           subDiv.appendChild(prodWrap);
