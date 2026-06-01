@@ -2671,8 +2671,7 @@ function resetReceipt() {
 // WEEKLY OFFERS
 
 async function loadWeeklyOffers() {
-  var today = new Date().toISOString().split('T')[0];
-  var data = await sbGet('prices?select=*&order=created_at.desc&limit=20');
+  var data = await sbGet('prices?select=*&is_sponsored=eq.true&order=created_at.desc&limit=20');
   if (!data.length) return;
 
   var banner = document.getElementById('weeklyOffersBanner');
