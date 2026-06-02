@@ -751,6 +751,115 @@ video{width:100%;height:100%;object-fit:cover;display:block}
   </div>
 </div>
 
+<!-- ═══ LOYALTY CARDS PAGE ═══ -->
+
+<div class="scan-page" id="mainCards">
+  <div style="padding:16px 0 14px">
+    <div style="font-size:20px;font-weight:700" id="cardsTitle">💳 Loyalty Cards</div>
+    <div style="font-size:13px;color:var(--text3);margin-top:2px" id="cardsSub">Store your loyalty cards — scan at checkout</div>
+  </div>
+
+  <!-- ADD CARD -->
+
+  <div class="card card-p" style="margin-bottom:14px">
+    <div style="font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:12px" id="addCardLabel">Add a card</div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:13px;color:var(--text2);font-weight:600;display:block;margin-bottom:6px" id="storeLabel">Store</label>
+      <select id="cardStore" class="inp" style="font-size:16px" onchange="updateCardColor()">
+        <option value="">Select store...</option>
+        <optgroup label="🇩🇪 Germany">
+          <option value="lidl_de" data-color="#0050AA" data-emoji="🇩🇪">Lidl DE</option>
+          <option value="aldi_de" data-color="#00A0E0" data-emoji="🇩🇪">Aldi DE</option>
+          <option value="rewe_de" data-color="#CC0000" data-emoji="🇩🇪">Rewe DE</option>
+          <option value="edeka_de" data-color="#FFD700" data-emoji="🇩🇪">Edeka DE</option>
+          <option value="dm_de" data-color="#CC0000" data-emoji="🇩🇪">dm Drogerie</option>
+          <option value="rossmann_de" data-color="#CC0000" data-emoji="🇩🇪">Rossmann</option>
+          <option value="kaufland_de" data-color="#CC0000" data-emoji="🇩🇪">Kaufland</option>
+        </optgroup>
+        <optgroup label="🇨🇭 Switzerland">
+          <option value="migros_ch" data-color="#FF6600" data-emoji="🇨🇭">Migros CH</option>
+          <option value="coop_ch" data-color="#CC0000" data-emoji="🇨🇭">Coop CH</option>
+          <option value="denner_ch" data-color="#CC0000" data-emoji="🇨🇭">Denner CH</option>
+          <option value="aldi_ch" data-color="#00A0E0" data-emoji="🇨🇭">Aldi CH</option>
+          <option value="lidl_ch" data-color="#0050AA" data-emoji="🇨🇭">Lidl CH</option>
+        </optgroup>
+        <optgroup label="🇫🇷 France">
+          <option value="leclerc_fr" data-color="#003189" data-emoji="🇫🇷">E.Leclerc FR</option>
+          <option value="carrefour_fr" data-color="#0066CC" data-emoji="🇫🇷">Carrefour FR</option>
+          <option value="lidl_fr" data-color="#0050AA" data-emoji="🇫🇷">Lidl FR</option>
+          <option value="grand_frais" data-color="#2D8C2D" data-emoji="🇫🇷">Grand Frais</option>
+        </optgroup>
+        <optgroup label="➕ Other">
+          <option value="custom" data-color="#6B7280" data-emoji="🏪">Other / Custom</option>
+        </optgroup>
+      </select>
+    </div>
+    <!-- Custom store name (shown only for "Other") -->
+    <div id="customStoreWrap" style="display:none;margin-bottom:10px">
+      <label style="font-size:13px;color:var(--text2);font-weight:600;display:block;margin-bottom:6px">Store name</label>
+      <input class="inp" id="customStoreName" type="text" placeholder="Enter store name...">
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:13px;color:var(--text2);font-weight:600;display:block;margin-bottom:6px" id="cardNumberLabel">Card number / barcode</label>
+      <div style="display:flex;gap:8px">
+        <input class="inp" id="cardNumber" type="text" placeholder="1234 5678 9012 3456" style="flex:1;letter-spacing:1px;font-size:18px">
+        <button onclick="scanCardBarcode()" class="btn-outline-green" style="padding:13px 14px;font-size:20px;min-height:50px" title="Scan barcode">📷</button>
+      </div>
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:13px;color:var(--text2);font-weight:600;display:block;margin-bottom:6px" id="cardNicknameLabel">Nickname (optional)</label>
+      <input class="inp" id="cardNickname" type="text" placeholder="e.g. My Migros Card">
+    </div>
+    <button onclick="addLoyaltyCard()" class="btn-primary" id="addCardBtn">+ Add Card</button>
+  </div>
+
+  <!-- CARDS LIST -->
+
+  <div id="loyaltyCardsList"></div>
+
+  <!-- EMPTY STATE -->
+
+  <div id="loyaltyCardsEmpty" style="text-align:center;padding:40px 20px;color:var(--text3)">
+    <div style="font-size:52px;margin-bottom:14px">💳</div>
+    <div style="font-size:18px;font-weight:600;color:var(--text2);margin-bottom:8px" id="noCardsTitle">No cards yet</div>
+    <div style="font-size:14px;line-height:1.6" id="noCardsSub">Add your loyalty cards above and forget the plastic!</div>
+  </div>
+</div>
+
+<!-- CARD BARCODE SCANNER -->
+
+<div id="cardScanModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,0.95);flex-direction:column;align-items:center;justify-content:center;padding:20px">
+  <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:16px">📷 Scan Card Barcode</div>
+  <div style="position:relative;background:#000;border-radius:16px;overflow:hidden;width:100%;max-width:400px;aspect-ratio:3/2">
+    <video id="cardScanVideo" playsinline autoplay muted style="width:100%;height:100%;object-fit:cover"></video>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+      <div style="width:85%;height:100px;border:2.5px solid #16A34A;border-radius:10px;box-shadow:0 0 0 9999px rgba(0,0,0,0.5)">
+        <div style="height:2px;background:linear-gradient(90deg,transparent,#16A34A,transparent);animation:scanln 1.8s ease-in-out infinite;position:relative;top:0"></div>
+      </div>
+    </div>
+    <div id="cardScanStatus" style="position:absolute;top:10px;left:0;right:0;text-align:center;font-size:13px;color:#16A34A;font-weight:600">Hold card barcode in frame</div>
+  </div>
+  <div style="display:flex;gap:10px;margin-top:16px;width:100%;max-width:400px">
+    <button onclick="stopCardScan()" style="flex:1;background:#EF4444;color:#fff;border:none;border-radius:14px;padding:15px 0;font-size:16px;font-weight:700;cursor:pointer;min-height:52px">Cancel</button>
+  </div>
+</div>
+
+<!-- CARD DISPLAY MODAL (show barcode to cashier) -->
+
+<div id="cardDisplayModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,0.95);flex-direction:column;align-items:center;justify-content:center;padding:24px">
+  <div id="cardDisplayContent" style="background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:420px;text-align:center">
+    <div id="cardDisplayStore" style="font-size:22px;font-weight:800;margin-bottom:4px"></div>
+    <div id="cardDisplayNickname" style="font-size:14px;color:#64748B;margin-bottom:20px"></div>
+    <!-- Barcode display -->
+    <div style="background:#f8f8f8;border-radius:12px;padding:20px;margin-bottom:16px">
+      <canvas id="barcodeCanvas" style="max-width:100%;height:80px"></canvas>
+      <div id="cardDisplayNumber" style="font-size:16px;font-weight:600;color:#0F172A;margin-top:10px;letter-spacing:2px;font-family:ui-monospace,monospace"></div>
+    </div>
+    <div style="font-size:13px;color:#94A3B8;margin-bottom:20px" id="showCashierText">Show this to the cashier or let them scan it</div>
+    <button onclick="closeCardDisplay()" style="width:100%;background:#0F172A;color:#fff;border:none;border-radius:14px;padding:16px 0;font-size:17px;font-weight:700;cursor:pointer;min-height:54px">Done</button>
+  </div>
+</div>
+
 <!-- ═══ BOTTOM NAV ═══ -->
 
 <nav class="bot-nav">
@@ -765,6 +874,9 @@ video{width:100%;height:100%;object-fit:cover;display:block}
   </button>
   <button class="nav-btn" id="navPrice" onclick="switchMainTab('price')">
     <span class="ico">💰</span><span id="navPriceLbl">PriceWatch</span>
+  </button>
+  <button class="nav-btn" id="navCards" onclick="switchMainTab('cards')">
+    <span class="ico">💳</span><span id="navCardsLbl">Cards</span>
   </button>
 </nav>
 
@@ -817,6 +929,18 @@ var T = {
     receipt_title: '🧾 Receipt Scanner',
     receipt_sub: 'Photograph your receipt — see what you spent',
     nav_receipt: 'Receipt',
+    nav_cards: 'Cards',
+    cards_title: '💳 Loyalty Cards',
+    cards_sub: 'Store your loyalty cards — scan at checkout',
+    add_card: 'Add a card',
+    store_label: 'Store',
+    card_number_label: 'Card number / barcode',
+    card_nickname_label: 'Nickname (optional)',
+    add_card_btn: '+ Add Card',
+    no_cards_title: 'No cards yet',
+    no_cards_sub: 'Add your loyalty cards and forget the plastic!',
+    show_checkout: '📲 Show at checkout',
+    show_cashier: 'Show this to the cashier or let them scan it',
     germany: '🇩🇪 Germany', switzerland: '🇨🇭 Switzerland', france: '🇫🇷 France',
   },
   de: {
@@ -861,6 +985,18 @@ var T = {
     receipt_title: '🧾 Kassenbon Scanner',
     receipt_sub: 'Kassenbon fotografieren — Ausgaben analysieren',
     nav_receipt: 'Kassenbon',
+    nav_cards: 'Karten',
+    cards_title: '💳 Treuekarten',
+    cards_sub: 'Karten speichern — an der Kasse scannen',
+    add_card: 'Karte hinzufügen',
+    store_label: 'Geschäft',
+    card_number_label: 'Kartennummer / Barcode',
+    card_nickname_label: 'Spitzname (optional)',
+    add_card_btn: '+ Karte hinzufügen',
+    no_cards_title: 'Noch keine Karten',
+    no_cards_sub: 'Fügen Sie Ihre Treuekarten hinzu!',
+    show_checkout: '📲 An der Kasse zeigen',
+    show_cashier: 'Zeigen Sie dies der Kassiererin',
     germany: '🇩🇪 Deutschland', switzerland: '🇨🇭 Schweiz', france: '🇫🇷 Frankreich',
   },
   fr: {
@@ -905,6 +1041,18 @@ var T = {
     receipt_title: '🧾 Scanner de ticket',
     receipt_sub: 'Photographiez votre ticket — analysez vos dépenses',
     nav_receipt: 'Ticket',
+    nav_cards: 'Cartes',
+    cards_title: '💳 Cartes de fidélité',
+    cards_sub: 'Stockez vos cartes — scannez à la caisse',
+    add_card: 'Ajouter une carte',
+    store_label: 'Magasin',
+    card_number_label: 'Numéro de carte / code-barres',
+    card_nickname_label: 'Surnom (optionnel)',
+    add_card_btn: '+ Ajouter',
+    no_cards_title: 'Aucune carte',
+    no_cards_sub: 'Ajoutez vos cartes de fidélité!',
+    show_checkout: '📲 Montrer à la caisse',
+    show_cashier: 'Montrez ceci au caissier',
     germany: '🇩🇪 Allemagne', switzerland: '🇨🇭 Suisse', france: '🇫🇷 France',
   }
 };
@@ -973,6 +1121,11 @@ function applyTranslations() {
   var wf = document.getElementById('waPasteBtnTxt'); if (wf) wf.textContent = t('wa_find');
   var wa = document.getElementById('waPasteAddAll'); if (wa) wa.textContent = t('wa_add_all');
   var wc = document.getElementById('waPasteClear'); if (wc) wc.textContent = t('wa_clear');
+  var ncard = document.getElementById('navCardsLbl'); if(ncard) ncard.textContent = t('nav_cards');
+  var ct = document.getElementById('cardsTitle'); if(ct) ct.textContent = t('cards_title');
+  var cs = document.getElementById('cardsSub'); if(cs) cs.textContent = t('cards_sub');
+  var nct = document.getElementById('noCardsTitle'); if(nct) nct.textContent = t('no_cards_title');
+  var ncs = document.getElementById('noCardsSub'); if(ncs) ncs.textContent = t('no_cards_sub');
 }
 
 // Init lang on load
@@ -1148,12 +1301,13 @@ function switchMainTab(tab) {
   var ms = document.getElementById('mainScan');
   var mp = document.getElementById('mainPrice');
   var mr = document.getElementById('mainReceipt');
+  var mc = document.getElementById('mainCards');
   if (sc) sc.style.display = 'none';
   if (ms) ms.style.display = 'none';
   if (mp) mp.style.display = 'none';
   if (mr) mr.style.display = 'none';
+  if (mc) mc.style.display = 'none';
 
-  // Show correct one
   if (tab === 'shopper') {
     if (sc) sc.style.display = 'block';
   } else if (tab === 'scan') {
@@ -1165,10 +1319,12 @@ function switchMainTab(tab) {
     if (mr) mr.style.display = 'block';
     renderReceiptHistory();
     updateBudgetUI();
+  } else if (tab === 'cards') {
+    if (mc) mc.style.display = 'block';
+    renderLoyaltyCards();
   }
 
-  // Update nav
-  ['shopper','scan','receipt','price'].forEach(function(t) {
+  ['shopper','scan','receipt','price','cards'].forEach(function(t) {
     var btn = document.getElementById('nav' + t.charAt(0).toUpperCase() + t.slice(1));
     if (btn) btn.classList.toggle('active', t === tab);
   });
@@ -2785,13 +2941,181 @@ function updateBudgetUI() {
   }
 }
 
-// INIT
 
+// LOYALTY CARDS
+var loyaltyCards = [];
+try { loyaltyCards = JSON.parse(localStorage.getItem('loyalty_cards') || '[]'); } catch(e) {}
+
+var STORE_META = {
+  lidl_de:{name:'Lidl DE',emoji:'🇩🇪',color:'#0050AA',bg:'#E8F0FF'},
+  aldi_de:{name:'Aldi DE',emoji:'🇩🇪',color:'#00A0E0',bg:'#E0F4FF'},
+  rewe_de:{name:'Rewe DE',emoji:'🇩🇪',color:'#CC0000',bg:'#FFE8E8'},
+  edeka_de:{name:'Edeka DE',emoji:'🇩🇪',color:'#E2A000',bg:'#FFF8E0'},
+  dm_de:{name:'dm Drogerie',emoji:'🇩🇪',color:'#CC0000',bg:'#FFE8E8'},
+  rossmann_de:{name:'Rossmann',emoji:'🇩🇪',color:'#CC0000',bg:'#FFE8E8'},
+  kaufland_de:{name:'Kaufland',emoji:'🇩🇪',color:'#CC0000',bg:'#FFE8E8'},
+  migros_ch:{name:'Migros CH',emoji:'🇨🇭',color:'#FF6600',bg:'#FFF0E8'},
+  coop_ch:{name:'Coop CH',emoji:'🇨🇭',color:'#CC0000',bg:'#FFE8E8'},
+  denner_ch:{name:'Denner CH',emoji:'🇨🇭',color:'#CC0000',bg:'#FFE8E8'},
+  aldi_ch:{name:'Aldi CH',emoji:'🇨🇭',color:'#00A0E0',bg:'#E0F4FF'},
+  lidl_ch:{name:'Lidl CH',emoji:'🇨🇭',color:'#0050AA',bg:'#E8F0FF'},
+  leclerc_fr:{name:'E.Leclerc',emoji:'🇫🇷',color:'#003189',bg:'#E8EEFF'},
+  carrefour_fr:{name:'Carrefour',emoji:'🇫🇷',color:'#0066CC',bg:'#E8F0FF'},
+  lidl_fr:{name:'Lidl FR',emoji:'🇫🇷',color:'#0050AA',bg:'#E8F0FF'},
+  grand_frais:{name:'Grand Frais',emoji:'🇫🇷',color:'#2D8C2D',bg:'#E8F8E8'},
+  custom:{name:'Custom',emoji:'🏪',color:'#6B7280',bg:'#F3F4F6'}
+};
+
+function updateCardColor() {
+  var storeId = document.getElementById('cardStore').value;
+  var cw = document.getElementById('customStoreWrap');
+  if (cw) cw.style.display = storeId === 'custom' ? 'block' : 'none';
+}
+
+function addLoyaltyCard() {
+  var storeId = document.getElementById('cardStore').value;
+  var number = document.getElementById('cardNumber').value.trim().replace(/\s+/g,'');
+  var nickname = document.getElementById('cardNickname').value.trim();
+  var customName = document.getElementById('customStoreName') ? document.getElementById('customStoreName').value.trim() : '';
+  if (!storeId) { showToast('Please select a store'); return; }
+  if (!number) { showToast('Please enter card number'); return; }
+  var meta = STORE_META[storeId] || STORE_META.custom;
+  var storeName = storeId === 'custom' ? (customName || 'Custom Store') : meta.name;
+  var card = {id:Date.now(), storeId:storeId, storeName:storeName, number:number,
+    nickname:nickname, color:meta.color, bg:meta.bg, emoji:meta.emoji, addedAt:Date.now()};
+  loyaltyCards.unshift(card);
+  try { localStorage.setItem('loyalty_cards', JSON.stringify(loyaltyCards)); } catch(e) {}
+  document.getElementById('cardStore').value = '';
+  document.getElementById('cardNumber').value = '';
+  document.getElementById('cardNickname').value = '';
+  if (document.getElementById('customStoreName')) document.getElementById('customStoreName').value = '';
+  if (document.getElementById('customStoreWrap')) document.getElementById('customStoreWrap').style.display = 'none';
+  renderLoyaltyCards();
+  showToast('Card added! ');
+}
+
+function deleteLoyaltyCard(id) {
+  if (!confirm('Remove this card?')) return;
+  loyaltyCards = loyaltyCards.filter(function(c){ return c.id !== id; });
+  try { localStorage.setItem('loyalty_cards', JSON.stringify(loyaltyCards)); } catch(e) {}
+  renderLoyaltyCards();
+}
+
+function formatCardNumber(num) {
+  return (num+'').replace(/(.{4})/g, '$1 ').trim();
+}
+
+function drawBarcode(number) {
+  var canvas = document.getElementById('barcodeCanvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  canvas.width = 300; canvas.height = 80;
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,300,80);
+  var digits = (number+'').replace(/\D/g,'');
+  if (!digits) {
+    ctx.fillStyle = '#0F172A'; ctx.font = 'bold 20px monospace';
+    ctx.textAlign = 'center'; ctx.fillText(number, 150, 48); return;
+  }
+  var bars = [2,1,2];
+  for (var i=0; i<digits.length; i++) {
+    var d = parseInt(digits[i]);
+    bars.push(1+(d%3)); bars.push(1+((d+1)%2));
+  }
+  bars = bars.concat([2,1,2]);
+  var totalW = bars.reduce(function(s,b){return s+b;},0);
+  var scale = 280/totalW, x = 10, drawBar = true;
+  bars.forEach(function(w) {
+    if (drawBar) { ctx.fillStyle='#000'; ctx.fillRect(x,4,Math.round(w*scale),56); }
+    x += Math.round(w*scale); drawBar = !drawBar;
+  });
+}
+
+function showCard(id) {
+  var card = loyaltyCards.find(function(c){return c.id===id;});
+  if (!card) return;
+  document.getElementById('cardDisplayStore').textContent = card.emoji+' '+card.storeName;
+  document.getElementById('cardDisplayStore').style.color = card.color;
+  document.getElementById('cardDisplayNickname').textContent = card.nickname||'';
+  document.getElementById('cardDisplayNumber').textContent = formatCardNumber(card.number);
+  drawBarcode(card.number);
+  document.getElementById('cardDisplayModal').style.display = 'flex';
+}
+
+function closeCardDisplay() {
+  document.getElementById('cardDisplayModal').style.display = 'none';
+}
+
+var cardScanStream = null;
+
+function scanCardBarcode() {
+  document.getElementById('cardScanModal').style.display = 'flex';
+  navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}})
+    .then(function(stream) {
+      cardScanStream = stream;
+      var video = document.getElementById('cardScanVideo');
+      video.srcObject = stream; video.play();
+      if ('BarcodeDetector' in window) { detectCardBarcode(video); }
+      else { document.getElementById('cardScanStatus').textContent = 'Type number manually'; }
+    }).catch(function(e) { stopCardScan(); showToast('Camera error: '+e.message); });
+}
+
+function detectCardBarcode(video) {
+  if (!cardScanStream) return;
+  new BarcodeDetector({formats:['ean_13','ean_8','code_128','code_39','upc_a','qr_code','itf']})
+    .detect(video).then(function(codes) {
+      if (codes.length > 0) {
+        document.getElementById('cardNumber').value = codes[0].rawValue;
+        stopCardScan(); showToast('Barcode scanned! ');
+      } else { if (cardScanStream) setTimeout(function(){detectCardBarcode(video);},300); }
+    }).catch(function(){ if (cardScanStream) setTimeout(function(){detectCardBarcode(video);},500); });
+}
+
+function stopCardScan() {
+  if (cardScanStream) { cardScanStream.getTracks().forEach(function(t){try{t.stop();}catch(e){}});  cardScanStream=null; }
+  document.getElementById('cardScanModal').style.display = 'none';
+}
+
+function renderLoyaltyCards() {
+  var listEl = document.getElementById('loyaltyCardsList');
+  var emptyEl = document.getElementById('loyaltyCardsEmpty');
+  if (!listEl) return;
+  if (!loyaltyCards.length) {
+    listEl.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+  listEl.innerHTML = '';
+  loyaltyCards.forEach(function(card) {
+    var div = document.createElement('div');
+    div.style.cssText = 'background:'+card.bg+';border:1px solid rgba(0,0,0,0.08);border-radius:18px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden';
+    div.innerHTML = '<div style="position:absolute;right:-20px;top:-20px;width:100px;height:100px;border-radius:50%;background:'+card.color+';opacity:0.12"></div>'
+      +'<div style="position:relative">'
+      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">'
+      +'<div><div style="font-size:11px;font-weight:700;color:'+card.color+';text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">'+card.emoji+' '+card.storeName+'</div>'
+      +'<div style="font-size:19px;font-weight:700;color:#0F172A;font-family:ui-monospace,monospace;letter-spacing:2px">'+formatCardNumber(card.number)+'</div>'
+      +(card.nickname?'<div style="font-size:13px;color:#64748B;margin-top:3px">'+card.nickname+'</div>':'')
+      +'</div>'
+      +'<button style="background:rgba(0,0,0,0.07);border:none;border-radius:8px;padding:7px 11px;cursor:pointer;font-size:13px;color:#64748B;min-height:36px">✕</button>'
+      +'</div>'
+      +'<button style="width:100%;background:'+card.color+';color:#fff;border:none;border-radius:12px;padding:13px 0;font-size:16px;font-weight:700;cursor:pointer;min-height:50px"> Show at checkout</button>'
+      +'</div>';
+    // Add event listeners
+    var delBtn = div.querySelector('button:first-of-type');
+    var showBtn = div.querySelector('button:last-of-type');
+    delBtn.addEventListener('click', (function(id){return function(e){e.stopPropagation();deleteLoyaltyCard(id);};})(card.id));
+    showBtn.addEventListener('click', (function(id){return function(){showCard(id);};})(card.id));
+    listEl.appendChild(div);
+  });
+}
+
+// INIT
 renderCategories();
 updateItemCount();
 loadWeeklyOffers();
 updateBudgetUI();
 renderReceiptHistory();
+renderLoyaltyCards();
 </script>
 
 </body>
