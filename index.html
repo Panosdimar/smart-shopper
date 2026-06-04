@@ -2806,6 +2806,73 @@ function renderReceiptHistory() {
       + '</div>';
   }).join('');
 }
+function showReceiptResults(parsed) {
+  var wrap = document.getElementById('receiptResults');
+  if (!wrap) return;
+  wrap.style.display = 'block';
+
+  var curr = parsed.currency || 'EUR';
+  var items = parsed.items || [];
+  var total = parsed.total || 0;
+
+  // Store card
+  var storeEl = document.getElementById('receiptStoreName');
+  var dateEl = document.getElementById('receiptStoreDate');
+  if (storeEl) storeEl.textContent = parsed.store || 'Unknown Store';
+  if (dateEl) dateEl.textContent = parsed.date ? new Date(parsed.date).toLocaleDateString('de-CH',{day:'2-digit',month:'short',year:'numeric'}) : '';
+  document.getElementById('receiptStoreCard').style.display = 'block';
+
+  // Stats
+  document.getElementById('receiptTotal').textContent = curr + ' ' + total.toFixed(2);
+  document.getElementById('receiptItemCount').textContent = items.length;
+  document.getElementById('receiptAvgPrice').textContent = items.length ? curr + ' ' + (total/items.length).toFixed(2) : '—';
+
+  // Category breakdown
+  var cats = {};
+  items.forEach(function(item) {
+    var cat = detectCategory(item.name);
+    if (!cats[cat]) cats[cat] = 0;
+    cats[cat] += item.price;
+  });
+  var catsHtml = '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:600;margin-bottom:10px">Spending by category</div>';
+  var maxV = Math.max.apply(null, Object.values(cats)) || 1;
+  Object.keys(cats).sort(function(a,b){return cats[b]-cats[a];}).forEach(function(cat) {
+    var pct = Math.round(cats[cat]/maxV*100);
+    catsHtml += '<div style="margin-bottom:8px">'
+      + '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px">'
+      + '<span>' + (CAT_ICONS[cat]||'🛒') + ' ' + cat + '</span>'
+      + '<span style="font-weight:600;color:var(--green)">' + curr + ' ' + cats[cat].toFixed(2) + '</span></div>'
+      + '<div style="background:rgba(255,255,255,0.06);border-radius:3px;height:5px">'
+      + '<div class="cat-spend-bar" style="width:' + pct + '%"></div></div></div>';
+  });
+  document.getElementById('receiptCats').innerHTML = catsHtml;
+
+  // Items list
+  var itemsHtml = '';
+  items.forEach(function(item) {
+    itemsHtml += '<div style="display:flex;justify-content:space-between;align-items:center;'
+      + 'padding:10px 14px;margin-bottom:6px;background:var(--card);border:1px solid var(--border2);'
+      + 'border-radius:10px">'
+      + '<span style="font-size:15px;color:var(--text);flex:1">' + esc(item.name) + '</span>'
+      + '<span style="font-size:15px;font-weight:600;color:var(--green);margin-left:10px">'
+      + curr + ' ' + item.price.toFixed(2) + '</span></div>';
+  });
+  if (!items.length) {
+    itemsHtml = '<div style="text-align:center;padding:20px;color:var(--text3)">No items recognised. Try a clearer photo.</div>';
+  }
+  document.getElementById('receiptItemsList').innerHTML = itemsHtml;
+  document.getElementById('receiptItemsLabel').textContent = 'All items (' + items.length + ')';
+
+  // Store parsed for saving
+  window._lastReceipt = {
+    store: {name: parsed.store || 'Unknown', flag: 'DE', curr: curr},
+    date: parsed.date,
+    total: total,
+    items: items
+  };
+
+  window.scrollTo(0, 0);
+}
 
 function resetReceipt() {
   document.getElementById('receiptImgWrap').style.display = 'none';
