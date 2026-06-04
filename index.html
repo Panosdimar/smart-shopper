@@ -2667,7 +2667,26 @@ async function runReceiptOCR() {
     }
   }
 }
-
+async function parseReceiptWithAI(rawText) {
+  try {
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:'Parse this German supermarket receipt OCR text. Return ONLY valid JSON with this structure: {"store":"store name","date":"YYYY-MM-DD or null","currency":"EUR or CHF","total":number,"items":[{"name":"product name","price":number}]}. Extract ALL line items with prices. Ignore tax lines, totals, headers. OCR text:\n\n'+rawText}]
+      })
+    });
+    var data = await resp.json();
+    var txt = data.content[0].text;
+    var clean = txt.replace(/```json|```/g,'').trim();
+    return JSON.parse(clean);
+  } catch(e) {
+    console.log('AI parse failed, using regex:', e);
+    return parseReceiptText(rawText);
+  }
+}
 function parseReceiptText(text) {
   var lines = text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
   var items = [];
