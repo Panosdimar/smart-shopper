@@ -2706,7 +2706,7 @@ function parseReceiptText(text) {
 
   // Price pattern: supports both 1.49 and 1,49 formats
   // Also handles negative prices (returns/discounts)
-  var priceRe = /(\-?\d+[.,]\d{2})\s*[ABab*]?\s*$/;
+  var priceRe = /(\d{1,4}[.,]\d{2})\s*[ABabCcDd*]?\s*$/;
   var totalRe = /total|summe|gesamt|montant|subtotal|zu\s*zahlen|betrag/i;
   var skipRe = /^(mwst|tva|ust|steuer|\d+\s*%|tel|www|http|fax|\*{3,}|={3,}|-{5,}|sie\s+haben|danke|kasse|datum|uhr|bon\s*nr)/i;
   var discountRe = /rabatt|discount|gutschein|coupon|promo|spar|aktion|\-\d+[.,]\d{2}/i;
