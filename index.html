@@ -2739,11 +2739,12 @@ function parseReceiptText(text) {
 
     // Extract name: everything before the price match
     var nameEnd=line.lastIndexOf(pm[0]);
-    var name=line.substring(0,nameEnd)
-      .replace(/\d{6,}/g,'')   // remove barcodes
-      .replace(/^\s*\d{1,3}\s+/,'') // remove leading qty
+    var name = line.substring(0,nameEnd)
+      .replace(/\d{6,}/g,'')
+      .replace(/^\s*\d{1,4}\s+/,'')
+      .replace(/^[A-Z]{1,3}\d+\s+/,'')
       .replace(/\s{2,}/g,' ')
-      .trim();
+      .trim();;
 
     if(name.length<2)return;
     if(/^[\d\s.,*\-\/€$]+$/.test(name))return;
