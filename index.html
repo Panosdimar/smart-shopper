@@ -2674,7 +2674,7 @@ function parseReceiptText(text) {
 
   // Detect currency
   if (/CHF|sfr/i.test(text)) currency = 'CHF';
-  else if (/£|GBP/i.test(text)) currency = 'GBP';
+  else if (/€|EUR/i.test(text)) currency = 'EUR';
 
   // Detect store from first few lines
   var storeKeywords = {
