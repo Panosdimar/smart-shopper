@@ -2666,23 +2666,23 @@ async function runReceiptOCR() {
 
 function parseReceiptText(text) {
   var lines = text.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
-  var MAX_ITEMS = 150;
   var items = [];
   var total = 0;
   var store = '';
   var date = null;
   var currency = 'EUR';
 
-  // Detect currency
-  if (/CHF|sfr/i.test(text)) currency = 'CHF';
-  else if (/€|EUR/i.test(text)) currency = 'EUR';
+  // Detect currency — CHF only if explicitly mentioned
+  if (/\bCHF\b|sfr\b|Fr\.\s*\d/i.test(text)) currency = 'CHF';
+  else if (/€|EUR|SUMME\s*€/i.test(text)) currency = 'EUR';
 
-  // Detect store from first few lines
+  // Detect store from first 8 lines
   var storeKeywords = {
-    'lidl':'Lidl','aldi':'Aldi','rewe':'Rewe','edeka':'Edeka','migros':'Migros',
-    'coop':'Coop','carrefour':'Carrefour','leclerc':'E.Leclerc','penny':'Penny',
-    'kaufland':'Kaufland','denner':'Denner','biocoop':'Biocoop','dm ':'dm',
-    'rossmann':'Rossmann','hieber':'Hieber\'s'
+    'hieber':'Hieber\'s','lidl':'Lidl','aldi':'Aldi','rewe':'Rewe',
+    'edeka':'Edeka','migros':'Migros','coop':'Coop','carrefour':'Carrefour',
+    'leclerc':'E.Leclerc','penny':'Penny','kaufland':'Kaufland',
+    'denner':'Denner','biocoop':'Biocoop','dm ':'dm','rossmann':'Rossmann',
+    'grand frais':'Grand Frais','alnatura':'Alnatura'
   };
   for (var i = 0; i < Math.min(8, lines.length); i++) {
     var ll = lines[i].toLowerCase();
@@ -2693,6 +2693,10 @@ function parseReceiptText(text) {
   }
   if (!store) store = lines[0] || 'Unknown Store';
 
+  // Set currency based on store country
+  if (['Migros','Coop','Denner'].includes(store)) currency = 'CHF';
+  else if (['Hieber\'s','Lidl','Aldi','Rewe','Edeka','Penny','Kaufland','Alnatura','dm','Rossmann'].includes(store)) currency = 'EUR';
+
   // Detect date
   var dateMatch = text.match(/(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})/);
   if (dateMatch) {
@@ -2700,28 +2704,53 @@ function parseReceiptText(text) {
     date = y + '-' + dateMatch[2].padStart(2,'0') + '-' + dateMatch[1].padStart(2,'0');
   }
 
-  // Parse items — look for lines with a price pattern
-  var priceRe = /(\d+[.,]\d{2})\s*[AB*]?\s*$/;
-  var totalRe = /total|summe|gesamt|montant|subtotal/i;
-  var skipRe = /^(mwst|tva|tva|ust|steuer|%|tel|www|http|fax|\*+|={3,}|-{3,})/i;
+  // Price pattern: supports both 1.49 and 1,49 formats
+  // Also handles negative prices (returns/discounts)
+  var priceRe = /(\-?\d+[.,]\d{2})\s*[ABab*]?\s*$/;
+  var totalRe = /total|summe|gesamt|montant|subtotal|zu\s*zahlen|betrag/i;
+  var skipRe = /^(mwst|tva|ust|steuer|\d+\s*%|tel|www|http|fax|\*{3,}|={3,}|-{5,}|sie\s+haben|danke|kasse|datum|uhr|bon\s*nr)/i;
+  var discountRe = /rabatt|discount|gutschein|coupon|promo|spar|aktion|\-\d+[.,]\d{2}/i;
 
   lines.forEach(function(line) {
     if (skipRe.test(line)) return;
     var pm = line.match(priceRe);
     if (!pm) return;
-    var price = parseFloat(pm[1].replace(',','.'));
-    if (isNaN(price) || price <= 0 || price > 500) return;
-    if (totalRe.test(line)) { if (price > total) total = price; return; }
-    var name = line.replace(priceRe,'').replace(/^[\d\s*]+/,'').trim();
+    // Normalize price: replace comma with dot
+    var priceStr = pm[1].replace(',','.');
+    var price = parseFloat(priceStr);
+    if (isNaN(price)) return;
+    // Skip negatives (discounts) and unrealistic prices
+    if (price < 0 || price > 1000) return;
+    // Detect total line
+    if (totalRe.test(line)) {
+      if (price > total) total = price;
+      return;
+    }
+    // Extract product name: remove price, leading numbers/codes
+    var name = line
+      .replace(priceRe, '')
+      .replace(/^\d{4,}\s*/, '')    // remove barcodes
+      .replace(/^[\d\s*]+/, '')     // remove leading numbers
+      .replace(/\s{2,}/g, ' ')      // collapse spaces
+      .trim();
     if (name.length < 2) return;
-    // Skip lines that are just numbers
-    if (/^[\d\s.,*-]+$/.test(name)) return;
-    if (items.length < MAX_ITEMS) items.push({ name: name.substring(0,50), qty: 1, price: price });
+    if (/^[\d\s.,*\-]+$/.test(name)) return; // skip pure numbers
+    if (items.length < 60) {
+      items.push({ name: name.substring(0,50), qty: 1, price: price });
+    }
   });
 
-  // If no total found, sum items
-  if (!total && items.length) {
-    total = Math.round(items.reduce(function(s,i){return s+i.price;},0) * 100) / 100;
+  // If total not found via keyword, use largest price or sum
+  if (!total) {
+    if (items.length > 0) {
+      // Try to find SUMME pattern directly
+      var sumMatch = text.match(/SUMME\s*[€£$]?\s*(\d+[.,]\d{2})/i);
+      if (sumMatch) {
+        total = parseFloat(sumMatch[1].replace(',','.'));
+      } else {
+        total = Math.round(items.reduce(function(s,i){return s+i.price;},0)*100)/100;
+      }
+    }
   }
 
   return { store: store, date: date, currency: currency, total: total, items: items };
