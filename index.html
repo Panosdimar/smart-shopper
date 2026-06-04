@@ -2728,13 +2728,15 @@ function parseReceiptText(text) {
     }
     // Extract product name: remove price, leading numbers/codes
     var name = line
-      .replace(priceRe, '')
-      .replace(/^\d{4,}\s*/, '')    // remove barcodes
-      .replace(/^[\d\s*]+/, '')     // remove leading numbers
-      .replace(/\s{2,}/g, ' ')      // collapse spaces
-      .trim();
-    if (name.length < 2) return;
-    if (/^[\d\s.,*\-]+$/.test(name)) return; // skip pure numbers
+  .replace(priceRe, '')
+  .replace(/\d{1,3}[.,]\d{3}[.,]\d{3}[-\s]?\d*/g, '') // remove barcodes
+  .replace(/^\s*\d{1,3}\s+/, '')  // remove quantity prefix
+  .replace(/\s{2,}/g, ' ')
+  .trim();
+if (name.length < 2) return;
+if (/^[\d\s.,*\-\/]+$/.test(name)) return;
+// Skip lines that are only tax codes or weight
+if (/^\d+[.,]\d{3}\s*(kg|g|l|ml)/i.test(name)) return;
     if (items.length < 60) {
       items.push({ name: name.substring(0,50), qty: 1, price: price });
     }
