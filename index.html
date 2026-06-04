@@ -2716,7 +2716,7 @@ function parseReceiptText(text) {
     if (name.length < 2) return;
     // Skip lines that are just numbers
     if (/^[\d\s.,*-]+$/.test(name)) return;
-    items.push({ name: name.substring(0,40), qty: 1, price: price });
+    if (items.length < MAX_ITEMS) items.push({ name: name.substring(0,50), qty: 1, price: price });
   });
 
   // If no total found, sum items
