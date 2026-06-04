@@ -2665,97 +2665,71 @@ async function runReceiptOCR() {
 }
 
 function parseReceiptText(text) {
-  var lines = text.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+  var lines = text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
   var items = [];
   var total = 0;
   var store = '';
   var date = null;
   var currency = 'EUR';
 
-  // Detect currency — CHF only if explicitly mentioned
-  if (/\bCHF\b|sfr\b|Fr\.\s*\d/i.test(text)) currency = 'CHF';
-  else if (/€|EUR|SUMME\s*€/i.test(text)) currency = 'EUR';
+  if (/\bCHF\b|sfr\b/i.test(text) && !/€|EUR|SUMME\s*€/i.test(text)) currency = 'CHF';
 
-  // Detect store from first 8 lines
-  var storeKeywords = {
-    'hieber':'Hieber\'s','lidl':'Lidl','aldi':'Aldi','rewe':'Rewe',
-    'edeka':'Edeka','migros':'Migros','coop':'Coop','carrefour':'Carrefour',
-    'leclerc':'E.Leclerc','penny':'Penny','kaufland':'Kaufland',
-    'denner':'Denner','biocoop':'Biocoop','dm ':'dm','rossmann':'Rossmann',
-    'grand frais':'Grand Frais','alnatura':'Alnatura'
-  };
-  for (var i = 0; i < Math.min(8, lines.length); i++) {
-    var ll = lines[i].toLowerCase();
-    for (var kw in storeKeywords) {
-      if (ll.includes(kw)) { store = storeKeywords[kw]; break; }
-    }
-    if (store) break;
+  var storeMap = {'hieber':"Hieber's",'lidl':'Lidl','aldi':'Aldi','rewe':'Rewe','edeka':'Edeka','migros':'Migros','coop':'Coop','carrefour':'Carrefour','leclerc':'E.Leclerc','penny':'Penny','kaufland':'Kaufland','denner':'Denner','dm ':'dm','rossmann':'Rossmann','alnatura':'Alnatura'};
+  for (var i=0;i<Math.min(8,lines.length);i++){
+    var ll=lines[i].toLowerCase();
+    for (var kw in storeMap){if(ll.includes(kw)){store=storeMap[kw];break;}}
+    if(store)break;
   }
-  if (!store) store = lines[0] || 'Unknown Store';
+  if(!store)store=lines[0]||'Unknown Store';
 
-  // Set currency based on store country
-  if (['Migros','Coop','Denner'].includes(store)) currency = 'CHF';
-  else if (['Hieber\'s','Lidl','Aldi','Rewe','Edeka','Penny','Kaufland','Alnatura','dm','Rossmann'].includes(store)) currency = 'EUR';
+  var chStores=["Migros","Coop","Denner"];
+  var deStores=["Hieber's","Lidl","Aldi","Rewe","Edeka","Penny","Kaufland","Alnatura","dm","Rossmann"];
+  if(chStores.includes(store))currency='CHF';
+  if(deStores.includes(store))currency='EUR';
 
-  // Detect date
-  var dateMatch = text.match(/(\d{1,2})[.\/\-](\d{1,2})[.\/\-](\d{2,4})/);
-  if (dateMatch) {
-    var y = dateMatch[3].length === 2 ? '20' + dateMatch[3] : dateMatch[3];
-    date = y + '-' + dateMatch[2].padStart(2,'0') + '-' + dateMatch[1].padStart(2,'0');
-  }
+  var dm=text.match(/(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})/);
+  if(dm){var y=dm[3].length===2?'20'+dm[3]:dm[3];date=y+'-'+dm[2].padStart(2,'0')+'-'+dm[1].padStart(2,'0');}
 
-  // Price pattern: supports both 1.49 and 1,49 formats
-  // Also handles negative prices (returns/discounts)
-  var priceRe = /(\d{1,4}[.,]\d{2})\s*[ABabCcDd*]?\s*$/;
-  var totalRe = /total|summe|gesamt|montant|subtotal|zu\s*zahlen|betrag/i;
-  var skipRe = /^(mwst|tva|ust|steuer|\d+\s*%|tel|www|http|fax|\*{3,}|={3,}|-{5,}|sie\s+haben|danke|kasse|datum|uhr|bon\s*nr)/i;
-  var discountRe = /rabatt|discount|gutschein|coupon|promo|spar|aktion|\-\d+[.,]\d{2}/i;
+  var totalRe=/total|summe|gesamt|montant|zu\s*zahlen|betrag/i;
+  var skipRe=/^(mwst|tva|ust|steuer|\d+\s*%|tel:|www\.|http|fax|sie haben|danke|kasse|datum|uhr|bon nr|kassierer|markt)/i;
 
-  lines.forEach(function(line) {
-    if (skipRe.test(line)) return;
-    var pm = line.match(priceRe);
-    if (!pm) return;
-    // Normalize price: replace comma with dot
-    var priceStr = pm[1].replace(',','.');
-    var price = parseFloat(priceStr);
-    if (isNaN(price)) return;
-    // Skip negatives (discounts) and unrealistic prices
-    if (price < 0 || price > 1000) return;
-    // Detect total line
-    if (totalRe.test(line)) {
-      if (price > total) total = price;
-      return;
-    }
-    // Extract product name: remove price, leading numbers/codes
-    var name = line
-  .replace(priceRe, '')
-  .replace(/\d{1,3}[.,]\d{3}[.,]\d{3}[-\s]?\d*/g, '') // remove barcodes
-  .replace(/^\s*\d{1,3}\s+/, '')  // remove quantity prefix
-  .replace(/\s{2,}/g, ' ')
-  .trim();
-if (name.length < 2) return;
-if (/^[\d\s.,*\-\/]+$/.test(name)) return;
-// Skip lines that are only tax codes or weight
-if (/^\d+[.,]\d{3}\s*(kg|g|l|ml)/i.test(name)) return;
-    if (items.length < 60) {
-      items.push({ name: name.substring(0,50), qty: 1, price: price });
-    }
+  // Match price at end of line — handles "1.95 A", "1,95 A", "1.95", "1,95"
+  // The key fix: price can be followed by optional space + single letter tax code
+  var priceRe=/\b(\d{1,3}[.,]\d{2})\s*[ABCDabcd]?\s*$/;
+
+  lines.forEach(function(line){
+    if(skipRe.test(line))return;
+    if(line.length<4)return;
+
+    var pm=line.match(priceRe);
+    if(!pm)return;
+
+    var price=parseFloat(pm[1].replace(',','.'));
+    if(isNaN(price)||price<=0||price>500)return;
+
+    if(totalRe.test(line)){if(price>total)total=price;return;}
+
+    // Extract name: everything before the price match
+    var nameEnd=line.lastIndexOf(pm[0]);
+    var name=line.substring(0,nameEnd)
+      .replace(/\d{6,}/g,'')   // remove barcodes
+      .replace(/^\s*\d{1,3}\s+/,'') // remove leading qty
+      .replace(/\s{2,}/g,' ')
+      .trim();
+
+    if(name.length<2)return;
+    if(/^[\d\s.,*\-\/€$]+$/.test(name))return;
+
+    if(items.length<60)items.push({name:name.substring(0,50),qty:1,price:price});
   });
 
-  // If total not found via keyword, use largest price or sum
-  if (!total) {
-    if (items.length > 0) {
-      // Try to find SUMME pattern directly
-      var sumMatch = text.match(/SUMME\s*[€£$]?\s*(\d+[.,]\d{2})/i);
-      if (sumMatch) {
-        total = parseFloat(sumMatch[1].replace(',','.'));
-      } else {
-        total = Math.round(items.reduce(function(s,i){return s+i.price;},0)*100)/100;
-      }
-    }
+  if(!total){
+    var sm=text.match(/SUMME\s*[€£$]?\s*(\d+[.,]\d{2})/i);
+    if(sm)total=parseFloat(sm[1].replace(',','.'));
+    else if(items.length)total=Math.round(items.reduce(function(s,i){return s+i.price;},0)*100)/100;
   }
 
-  return { store: store, date: date, currency: currency, total: total, items: items };
+  return{store:store,date:date,currency:currency,total:total,items:items};
 }
 function saveReceiptToHistory() {
   if (!window._lastReceipt) return;
