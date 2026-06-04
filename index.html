@@ -2666,6 +2666,7 @@ async function runReceiptOCR() {
 
 function parseReceiptText(text) {
   var lines = text.split('\n').map(function(l){ return l.trim(); }).filter(Boolean);
+  var MAX_ITEMS = 150;
   var items = [];
   var total = 0;
   var store = '';
