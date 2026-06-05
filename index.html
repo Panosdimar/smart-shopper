@@ -3192,7 +3192,7 @@ function renderLoyaltyCards() {
     var delBtn = div.querySelector('button:first-of-type');
     var showBtn = div.querySelector('button:last-of-type');
     delBtn.addEventListener('click', (function(id){return function(e){e.stopPropagation();deleteLoyaltyCard(id);};})(card.id));
-    showBtn.addEventListener('click', (function(id){return function(){showCard(id);};})(card.id));
+    showBtn.addEventListener('click', (function(id){return function(e){e.preventDefault();e.stopPropagation();showCard(id);};})(card.id));
     listEl.appendChild(div);
   });
 }
