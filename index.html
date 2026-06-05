@@ -2895,7 +2895,7 @@ function showReceiptResults(parsed) {
   if (!items.length) {
     itemsHtml = '<div style="text-align:center;padding:20px;color:var(--text3)">No items recognised. Try a clearer photo.</div>';
   }
-  document.getElementById('receiptItemsList').style.cssText = 'max-height:400px;overflow-y:auto;';
+  document.getElementById('receiptItemsList').innerHTML = itemsHtml;
   document.getElementById('receiptItemsLabel').textContent = 'All items (' + items.length + ')';
 
   // Store parsed for saving
