@@ -3163,9 +3163,7 @@ function detectCardBarcode(video) {
 
 function stopCardScan() {
   if (cardScanStream) { cardScanStream.getTracks().forEach(function(t){try{t.stop();}catch(e){}});  cardScanStream=null; }
-  var modal = document.getElementById('cardDisplayModal');
-modal.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,0.95);';
-setTimeout(function(){ drawBarcode(card.number); }, 50);
+  document.getElementById('cardScanModal').style.display = 'none';
 }
 
 function renderLoyaltyCards() {
