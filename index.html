@@ -3124,12 +3124,9 @@ function showCard(id) {
   document.getElementById('cardDisplayNickname').textContent = card.nickname||'';
   document.getElementById('cardDisplayNumber').textContent = formatCardNumber(card.number);
   drawBarcode(card.number);
-  var m = document.getElementById('cardDisplayModal');
-m.style.display = 'flex';
-m.style.flexDirection = 'column';
-m.style.alignItems = 'center';
-m.style.justifyContent = 'center';
-setTimeout(function(){ drawBarcode(card.number); }, 100);
+    var m = document.getElementById('cardDisplayModal');
+  m.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:center;position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:rgba(0,0,0,0.95);';
+  setTimeout(function(){ drawBarcode(card.number); }, 100);
 }
 
 function closeCardDisplay() {
