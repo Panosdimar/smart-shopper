@@ -1606,7 +1606,7 @@ function renderCategories() {
             }
             var nameSpan = document.createElement('span');
             nameSpan.style.cssText = 'cursor:pointer;display:flex;align-items:center;gap:4px;flex:1';
-            nameSpan.innerHTML = tx(prod.name) + '<span style="font-size:9px;color:var(--text3);margin-left:3px">'+prod.unit+'</span>' + lblIcons;
+            nameSpan.innerHTML = tx(prod.name) + '<span style="font-size:9px;color:var(--text3);margin-left:3px">'+prod.unit+'</span>' + '<span style="pointer-events:none">' + lblIcons + '</span>';
             nameSpan.addEventListener('click', (function(pid){ return function(){ toggleItem(pid); }; })(prod.id));
             chip.appendChild(nameSpan);
             if (qtyHtml) {
