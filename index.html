@@ -1594,7 +1594,7 @@ function renderCategories() {
             var sel = !!state.basket.find(function(b){return b.pid===prod.id;});
             var bItem = state.basket.find(function(b){return b.pid===prod.id;});
             var chip = document.createElement('div'); chip.className = 'prod-chip'+(sel?' sel':'');
-            chip.style.cssText += ';cursor:pointer';
+            chip.style.cssText += ';cursor:pointer;-webkit-tap-highlight-color:rgba(22,163,74,0.2);touch-action:manipulation';
             chip.addEventListener('click', (function(pid){ return function(e){ if(e.target.classList.contains('qty-btn')) return; toggleItem(pid); }; })(prod.id));
             var lblIcons = prod.labels.map(function(l){ var cfg=LABEL_CFG[l]; return cfg?'<span class="'+cfg.cls+'">'+cfg.icon+'</span>':''; }).join('');
             var qtyHtml = '';
