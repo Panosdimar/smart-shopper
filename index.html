@@ -3189,11 +3189,12 @@ function renderLoyaltyCards() {
       +'</div>'
       +'<button style="width:100%;background:'+card.color+';color:#fff;border:none;border-radius:12px;padding:13px 0;font-size:16px;font-weight:700;cursor:pointer;min-height:50px"> Show at checkout</button>'
       +'</div>';
-    // Add event listeners
-    var delBtn = div.querySelector('button:first-of-type');
-    var showBtn = div.querySelector('button:last-of-type');
-    delBtn.addEventListener('click', (function(id){return function(e){e.stopPropagation();deleteLoyaltyCard(id);};})(card.id));
-    showBtn.addEventListener('click', (function(id){return function(e){e.preventDefault();e.stopPropagation();showCard(id);};})(card.id));
+        // Add event listeners
+    var allBtns = div.querySelectorAll('button');
+    var delBtn = allBtns[0];
+    var showBtn = allBtns[1];
+    if (delBtn) delBtn.addEventListener('click', (function(id){return function(e){e.stopPropagation();deleteLoyaltyCard(id);};})(card.id));
+    if (showBtn) showBtn.addEventListener('click', (function(id){return function(e){e.preventDefault();e.stopPropagation();showCard(id);};})(card.id));
     listEl.appendChild(div);
   });
 }
