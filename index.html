@@ -3118,7 +3118,8 @@ function drawBarcode(number) {
 
 function showCard(id) {
   var card = loyaltyCards.find(function(c){return c.id===id;});
-  if (!card) return;
+  if (!card) { alert('Card not found: '+id); return; }
+  alert('Found card: '+card.storeName);
   document.getElementById('cardDisplayStore').textContent = card.emoji+' '+card.storeName;
   document.getElementById('cardDisplayStore').style.color = card.color;
   document.getElementById('cardDisplayNickname').textContent = card.nickname||'';
