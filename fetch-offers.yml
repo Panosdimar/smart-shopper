@@ -1,0 +1,29 @@
+name: Fetch Supermarket Offers
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 6am
+  workflow_dispatch:       # Manual trigger
+
+jobs:
+  fetch-offers:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests anthropic supabase
+
+      - name: Fetch and parse offers
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python .github/scripts/fetch_offers.py
