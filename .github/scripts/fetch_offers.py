@@ -27,8 +27,14 @@ def fetch_offers_from_text(store_id, store_name, flag, currency, text):
             max_tokens=2000,
             messages=[{"role":"user","content":prompt}]
         )
-        raw = re.sub("```json|```","",msg.content[0].text).strip()
-        items = json.loads(raw)
+        raw = msg.content[0].text.strip()
+        raw = re.sub("```json|```","",raw).strip()
+        match = re.search("\[.*\]",raw,re.DOTALL)
+        if not match:
+            print("No JSON array found: " + raw[:200])
+            return []
+        items = json.loads(match.group(0))
+
         week_end = (datetime.utcnow()+timedelta(days=7)).strftime("%Y-%m-%d")
         rows = []
         for item in items:
