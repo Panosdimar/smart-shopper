@@ -9,15 +9,7 @@ sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_KEY"])
 
 ZIP_CODE = "79639"
 
-DE_STORES = [
-    {"id":"lidl_de","name":"Lidl","flag":"DE","currency":"EUR"},
-    {"id":"aldi_de","name":"Aldi","flag":"DE","currency":"EUR"},
-    {"id":"rewe_de","name":"Rewe","flag":"DE","currency":"EUR"},
-    {"id":"edeka_de","name":"Edeka","flag":"DE","currency":"EUR"},
-    {"id":"kaufland_de","name":"Kaufland","flag":"DE","currency":"EUR"},
-]
-
-STORE_NAME_MAP = {
+STORE_MAP = {
     "lidl": "lidl_de",
     "aldi": "aldi_de",
     "rewe": "rewe_de",
@@ -26,122 +18,126 @@ STORE_NAME_MAP = {
     "penny": "penny_de",
 }
 
-def get_marktguru_key():
+PRODUCTS = [
+    "Milch","Eier","Butter","Käse","Joghurt",
+    "Hähnchen","Hackfleisch","Lachs","Wurst","Schinken",
+    "Brot","Nudeln","Reis","Mehl","Zucker","Öl",
+    "Apfel","Banane","Tomate","Karotte","Kartoffel","Paprika",
+    "Wasser","Saft","Kaffee","Bier","Wein",
+    "Chips","Schokolade","Kekse","Joghurt"
+]
+
+def get_api_key():
     try:
-        resp = requests.get("https://www.marktguru.de", timeout=10)
-        match = re.search(r'"apiKey"\s*:\s*"([^"]+)"', resp.text)
-        if match:
-            return match.group(1)
-        match = re.search(r'apiKey=([a-zA-Z0-9_-]+)', resp.text)
-        if match:
-            return match.group(1)
+        resp = requests.get("https://www.marktguru.de/", timeout=10,
+            headers={"User-Agent":"Mozilla/5.0"})
+        for pattern in [r'"api_key"\s*:\s*"([^"]+)"',
+                        r'"apiKey"\s*:\s*"([^"]+)"',
+                        r'api[_-]?key["\s:=]+([a-zA-Z0-9_-]{20,})']:
+            m = re.search(pattern, resp.text, re.IGNORECASE)
+            if m:
+                print("Found API key")
+                return m.group(1)
     except Exception as e:
         print("Key error: " + str(e))
-    return None
+    return "mg-api-key"
 
-def fetch_marktguru_offers(api_key, zip_code):
-    url = "https://api.marktguru.de/api/v1/offers/search"
-    headers = {
-        "x-apikey": api_key,
-        "x-clientkey": "marktguru-web",
-        "Content-Type": "application/json"
-    }
-    products = [
-        "Milch", "Eier", "Butter", "Joghurt", "Käse",
-        "Hähnchen", "Hackfleisch", "Lachs", "Wurst",
-        "Brot", "Nudeln", "Reis", "Mehl", "Zucker",
-        "Apfel", "Banane", "Tomate", "Karotte", "Kartoffel",
-        "Wasser", "Saft", "Kaffee", "Tee",
-        "Chips", "Schokolade", "Kekse"
-    ]
-    all_offers = []
-    for product in products:
-        try:
-            payload = {
-                "query": product,
-                "zipCode": zip_code,
-                "limit": 10
-            }
-            resp = requests.post(url, headers=headers, json=payload, timeout=10)
-            if resp.status_code == 200:
-                data = resp.json()
-                offers = data.get("offers", data.get("results", []))
-                all_offers.extend(offers)
-        except Exception as e:
-            print("Search error " + product + ": " + str(e))
-    return all_offers
+def search_offers(query, api_key):
+    try:
+        url = "https://api.marktguru.de/api/v1/offers/search"
+        headers = {
+            "x-apikey": api_key,
+            "accept": "application/json",
+            "User-Agent": "Mozilla/5.0"
+        }
+        params = {
+            "as": "web",
+            "limit": 15,
+            "offset": 0,
+            "q": query,
+            "zipCode": ZIP_CODE
+        }
+        resp = requests.get(url, headers=headers, params=params, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            return data.get("offers", data.get("results", []))
+        else:
+            print("Status " + str(resp.status_code) + " for " + query)
+    except Exception as e:
+        print("Error " + query + ": " + str(e))
+    return []
 
-def parse_offers(offers):
+def parse_rows(offers):
     rows = []
-    week_end = (datetime.utcnow() + timedelta(days=7)).strftime("%Y-%m-%d")
     seen = set()
+    week_end = (datetime.utcnow() + timedelta(days=7)).strftime("%Y-%m-%d")
 
-    for offer in offers:
+    for o in offers:
         try:
-            name = offer.get("title", offer.get("name", ""))
-            price = offer.get("price", offer.get("regularPrice", 0))
-            store_name = offer.get("advertiser", offer.get("store", {}).get("name", ""))
-            unit = offer.get("unit", "pcs")
+            name = o.get("title", o.get("name", ""))
+            price_raw = o.get("price", o.get("regularPrice", 0))
+            price = float(str(price_raw).replace(",",".")) if price_raw else 0
+            retailer = o.get("advertiser", {})
+            if isinstance(retailer, dict):
+                store_name = retailer.get("name", "")
+            else:
+                store_name = str(retailer)
 
             if not name or not price or not store_name:
                 continue
 
-            store_key = None
-            for key, sid in STORE_NAME_MAP.items():
+            store_id = None
+            for key, sid in STORE_MAP.items():
                 if key.lower() in store_name.lower():
-                    store_key = sid
+                    store_id = sid
                     break
-
-            if not store_key:
+            if not store_id:
                 continue
 
-            pid = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
-            dedup = pid + "_" + store_key
+            pid = re.sub(r"[^a-z0-9]+","_",name.lower()).strip("_")[:50]
+            dedup = pid + "_" + store_id
             if dedup in seen:
                 continue
             seen.add(dedup)
 
             rows.append({
-                "store_id": store_key,
+                "store_id": store_id,
                 "store_name": store_name,
                 "store_flag": "DE",
                 "product_id": pid,
                 "product_name": name,
-                "price": float(price),
+                "price": price,
                 "currency": "EUR",
-                "unit": str(unit),
+                "unit": str(o.get("unit", "pcs")),
                 "valid_until": week_end,
                 "created_at": datetime.utcnow().isoformat()
             })
         except Exception as e:
             print("Parse error: " + str(e))
-            continue
 
     return rows
 
 def main():
-    print("Getting Marktguru API key...")
-    api_key = get_marktguru_key()
+    api_key = get_api_key()
+    print("Using key: " + api_key[:10] + "...")
 
-    if not api_key:
-        print("No API key found - trying fallback key")
-        api_key = "marktguru"
+    all_offers = []
+    for product in PRODUCTS:
+        offers = search_offers(product, api_key)
+        all_offers.extend(offers)
+        print(product + ": " + str(len(offers)) + " offers")
 
-    print("Fetching offers for ZIP: " + ZIP_CODE)
-    offers = fetch_marktguru_offers(api_key, ZIP_CODE)
-    print("Raw offers found: " + str(len(offers)))
-
-    rows = parse_offers(offers)
-    print("Parsed rows: " + str(len(rows)))
+    print("Total raw: " + str(len(all_offers)))
+    rows = parse_rows(all_offers)
+    print("Parsed: " + str(len(rows)))
 
     if rows:
-        for store_id in set(r["store_id"] for r in rows):
-            sb.table("prices").delete().eq("store_id", store_id).execute()
-
+        for sid in set(r["store_id"] for r in rows):
+            sb.table("prices").delete().eq("store_id", sid).execute()
         sb.table("prices").insert(rows).execute()
-        print("Saved " + str(len(rows)) + " offers to Supabase!")
+        print("Saved " + str(len(rows)) + " to Supabase!")
     else:
-        print("No offers to save")
+        print("Nothing to save")
 
 if __name__ == "__main__":
     main()
