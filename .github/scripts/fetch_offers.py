@@ -134,7 +134,8 @@ def main():
         all_offers.extend(offers)
         if offers and product == "Milch":
                     print("SAMPLE: " + json.dumps(offers[0], ensure_ascii=False))
-
+        if offers and product == "Milch":
+                    print("IMAGE DATA: " + json.dumps(offers[0].get("images", {}), ensure_ascii=False))
 
     print("Total raw: " + str(len(all_offers)))
     rows = parse_rows(all_offers)
