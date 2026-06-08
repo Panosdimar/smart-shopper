@@ -2,90 +2,146 @@ import os
 import re
 import json
 import requests
-import anthropic
 from supabase import create_client
 from datetime import datetime, timedelta
 
 sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_KEY"])
-ai = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
-STORES = [
-    {"id":"lidl_de","name":"Lidl","flag":"DE","currency":"EUR","url":"https://www.lidl.de/de/angebote"},
-    {"id":"aldi_de","name":"Aldi","flag":"DE","currency":"EUR","url":"https://www.aldi-sued.de/de/angebote.html"},
-    {"id":"rewe_de","name":"Rewe","flag":"DE","currency":"EUR","url":"https://www.rewe.de/angebote/"},
-    {"id":"migros_ch","name":"Migros","flag":"CH","currency":"CHF","url":"https://www.migros.ch/de/angebote"},
-    {"id":"lidl_fr","name":"Lidl FR","flag":"FR","currency":"EUR","url":"https://www.lidl.fr/nos-offres"},
+ZIP_CODE = "79639"
+
+DE_STORES = [
+    {"id":"lidl_de","name":"Lidl","flag":"DE","currency":"EUR"},
+    {"id":"aldi_de","name":"Aldi","flag":"DE","currency":"EUR"},
+    {"id":"rewe_de","name":"Rewe","flag":"DE","currency":"EUR"},
+    {"id":"edeka_de","name":"Edeka","flag":"DE","currency":"EUR"},
+    {"id":"kaufland_de","name":"Kaufland","flag":"DE","currency":"EUR"},
 ]
 
-HEADERS = {"User-Agent":"Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)"}
+STORE_NAME_MAP = {
+    "lidl": "lidl_de",
+    "aldi": "aldi_de",
+    "rewe": "rewe_de",
+    "edeka": "edeka_de",
+    "kaufland": "kaufland_de",
+    "penny": "penny_de",
+}
 
-def fetch_offers_from_text(store_id, store_name, flag, currency, text):
+def get_marktguru_key():
     try:
-        prompt = "Extract supermarket offers. Return ONLY JSON array: [{\"product_id\":\"slug\",\"product_name\":\"Name\",\"price\":1.99,\"unit\":\"kg\"}]. Max 20 items. Store: " + store_name + " " + flag + " " + currency + "\n\n" + text[:3000]
-        msg = ai.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=2000,
-            messages=[{"role":"user","content":prompt}]
-        )
-        raw = msg.content[0].text.strip()
-        raw = re.sub("```json|```","",raw).strip()
-        match = re.search("\[.*\]",raw,re.DOTALL)
-        if not match:
-            print("No JSON array found: " + raw[:200])
-            return []
-        items = json.loads(match.group(0))
+        resp = requests.get("https://www.marktguru.de", timeout=10)
+        match = re.search(r'"apiKey"\s*:\s*"([^"]+)"', resp.text)
+        if match:
+            return match.group(1)
+        match = re.search(r'apiKey=([a-zA-Z0-9_-]+)', resp.text)
+        if match:
+            return match.group(1)
+    except Exception as e:
+        print("Key error: " + str(e))
+    return None
 
-        week_end = (datetime.utcnow()+timedelta(days=7)).strftime("%Y-%m-%d")
-        rows = []
-        for item in items:
-            if not item.get("product_name") or not item.get("price"):
+def fetch_marktguru_offers(api_key, zip_code):
+    url = "https://api.marktguru.de/api/v1/offers/search"
+    headers = {
+        "x-apikey": api_key,
+        "x-clientkey": "marktguru-web",
+        "Content-Type": "application/json"
+    }
+    products = [
+        "Milch", "Eier", "Butter", "Joghurt", "Käse",
+        "Hähnchen", "Hackfleisch", "Lachs", "Wurst",
+        "Brot", "Nudeln", "Reis", "Mehl", "Zucker",
+        "Apfel", "Banane", "Tomate", "Karotte", "Kartoffel",
+        "Wasser", "Saft", "Kaffee", "Tee",
+        "Chips", "Schokolade", "Kekse"
+    ]
+    all_offers = []
+    for product in products:
+        try:
+            payload = {
+                "query": product,
+                "zipCode": zip_code,
+                "limit": 10
+            }
+            resp = requests.post(url, headers=headers, json=payload, timeout=10)
+            if resp.status_code == 200:
+                data = resp.json()
+                offers = data.get("offers", data.get("results", []))
+                all_offers.extend(offers)
+        except Exception as e:
+            print("Search error " + product + ": " + str(e))
+    return all_offers
+
+def parse_offers(offers):
+    rows = []
+    week_end = (datetime.utcnow() + timedelta(days=7)).strftime("%Y-%m-%d")
+    seen = set()
+
+    for offer in offers:
+        try:
+            name = offer.get("title", offer.get("name", ""))
+            price = offer.get("price", offer.get("regularPrice", 0))
+            store_name = offer.get("advertiser", offer.get("store", {}).get("name", ""))
+            unit = offer.get("unit", "pcs")
+
+            if not name or not price or not store_name:
                 continue
-            rows.append({
-                "store_id":store_id,
-                "store_name":store_name,
-                "store_flag":flag,
-                "product_id":item.get("product_id","").lower().replace(" ","_"),
-                "product_name":item.get("product_name",""),
-                "price":float(item.get("price",0)),
-                "currency":currency,
-                "unit":item.get("unit","pcs"),
-                "valid_until":week_end,
-                "created_at":datetime.utcnow().isoformat()
-            })
-        return rows
-    except Exception as e:
-        print("AI error " + store_name + ": " + str(e))
-        return []
 
-def fetch_store_page(store):
-    try:
-        resp = requests.get(store["url"],headers=HEADERS,timeout=15)
-        text = re.sub("<[^>]+"," ",resp.text)
-        text = re.sub("\s+"," ",text).strip()
-        matches = re.finditer("([A-Za-z\s]{3,40})\s+(\d+[.,]\d{2})\s*(?:EUR|CHF)?",text)
-        lines = [m.group(1).strip() + ": " + m.group(2) for m in matches]
-        return "\n".join(lines[:100]) if lines else text[:3000]
-    except Exception as e:
-        print("Fetch error " + store["name"] + ": " + str(e))
-        return None
+            store_key = None
+            for key, sid in STORE_NAME_MAP.items():
+                if key.lower() in store_name.lower():
+                    store_key = sid
+                    break
+
+            if not store_key:
+                continue
+
+            pid = re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_")
+            dedup = pid + "_" + store_key
+            if dedup in seen:
+                continue
+            seen.add(dedup)
+
+            rows.append({
+                "store_id": store_key,
+                "store_name": store_name,
+                "store_flag": "DE",
+                "product_id": pid,
+                "product_name": name,
+                "price": float(price),
+                "currency": "EUR",
+                "unit": str(unit),
+                "valid_until": week_end,
+                "created_at": datetime.utcnow().isoformat()
+            })
+        except Exception as e:
+            print("Parse error: " + str(e))
+            continue
+
+    return rows
 
 def main():
-    total = 0
-    for store in STORES:
-        print("--- " + store["name"] + " " + store["flag"] + " ---")
-        text = fetch_store_page(store)
-        if not text:
-            print("Skipped")
-            continue
-        rows = fetch_offers_from_text(store["id"],store["name"],store["flag"],store["currency"],text)
-        if rows:
-            sb.table("prices").delete().eq("store_id",store["id"]).execute()
-            sb.table("prices").insert(rows).execute()
-            total += len(rows)
-            print(str(len(rows)) + " offers saved")
-        else:
-            print("No offers found")
-    print("Total: " + str(total) + " offers")
+    print("Getting Marktguru API key...")
+    api_key = get_marktguru_key()
+
+    if not api_key:
+        print("No API key found - trying fallback key")
+        api_key = "marktguru"
+
+    print("Fetching offers for ZIP: " + ZIP_CODE)
+    offers = fetch_marktguru_offers(api_key, ZIP_CODE)
+    print("Raw offers found: " + str(len(offers)))
+
+    rows = parse_offers(offers)
+    print("Parsed rows: " + str(len(rows)))
+
+    if rows:
+        for store_id in set(r["store_id"] for r in rows):
+            sb.table("prices").delete().eq("store_id", store_id).execute()
+
+        sb.table("prices").insert(rows).execute()
+        print("Saved " + str(len(rows)) + " offers to Supabase!")
+    else:
+        print("No offers to save")
 
 if __name__ == "__main__":
     main()
