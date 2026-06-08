@@ -106,6 +106,10 @@ def parse_rows(offers):
             if dedup in seen:
                 continue
             seen.add(dedup)
+            
+            offer_id = str(o.get("id", ""))
+                        old_price = float(o.get("oldPrice") or o.get("referencePrice") or price)
+                        image_url = "https://images.marktguru.de/offers/" + offer_id + "/w300.jpg" if offer_id else ""
 
             rows.append({
                 "store_id": store_id,
@@ -118,6 +122,9 @@ def parse_rows(offers):
                 "unit": unit,
                 "valid_until": valid_until,
                 "created_at": datetime.utcnow().isoformat()
+                 "offer_id": offer_id,
+                 "image_url": image_url,
+                 "old_price": old_price,
             })
         except Exception as e:
             print("Parse error: " + str(e))
