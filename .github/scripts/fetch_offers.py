@@ -74,14 +74,21 @@ def parse_rows(offers):
 
     for o in offers:
         try:
-            name = o.get("title", o.get("name", ""))
-            price_raw = o.get("price", o.get("regularPrice", 0))
-            price = float(str(price_raw).replace(",",".")) if price_raw else 0
-            retailer = o.get("advertiser", {})
-            if isinstance(retailer, dict):
-                store_name = retailer.get("name", "")
-            else:
-                store_name = str(retailer)
+            name = o.get("description", o.get("product", {}).get("name", ""))
+            price = float(o.get("price", 0) or 0)
+            
+            advertisers = o.get("advertisers", [])
+            if not advertisers:
+                continue
+            store_name = advertisers[0].get("name", "")
+            
+            unit_obj = o.get("unit", {})
+            unit = unit_obj.get("shortName", "pcs") if isinstance(unit_obj, dict) else "pcs"
+
+            validity = o.get("validityDates", [])
+            valid_until = week_end
+            if validity:
+                valid_until = validity[0].get("to", week_end)[:10]
 
             if not name or not price or not store_name:
                 continue
@@ -108,8 +115,8 @@ def parse_rows(offers):
                 "product_name": name,
                 "price": price,
                 "currency": "EUR",
-                "unit": str(o.get("unit", "pcs")),
-                "valid_until": week_end,
+                "unit": unit,
+                "valid_until": valid_until,
                 "created_at": datetime.utcnow().isoformat()
             })
         except Exception as e:
