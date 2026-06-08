@@ -1743,31 +1743,31 @@ function doAnalyze() {
       });
     });
 
-        // STEP 2: Add admin prices NOT already used by basket
-    if (pricesLoaded) {
-      var seenPids = {};
-      Object.keys(realPrices).forEach(function(key) {
-        if (!key.endsWith('_'+s.id)) return;
-        var rp = realPrices[key];
-        var rpid = rp.product_id.trim();
-        // Skip if already shown via basket match
-        if (usedRealPids[rpid] || seenPids[rpid]) return;
-        seenPids[rpid] = true;
-        var rPrice = parseFloat(rp.price);
-        var rCurr = rp.currency || currency;
-        var cleanName = (rp.product_name||rpid)
-          .replace(/[Ѐ-ӿ]/g,'').replace(/\s*\([^)]*\)/g,'').trim()
-          || rpid.replace(/_/g,' ');
-        total += rPrice;
-        lines.push({
-          pid: rpid, displayName: cleanName,
-          qty: 1, unit: rp.unit||'pcs',
-          price: rPrice, line: rPrice,
-          saving: 0, hasOffer: true, isReal: true,
-          currency: rCurr, fromAdmin: true
-        });
-      });
-    }
+    // STEP 2: Add admin prices NOT already used by basket
+        if (pricesLoaded) {
+          var seenPids = {};
+          Object.keys(realPrices).forEach(function(key) {
+            if (!key.endsWith('_'+s.id)) return;
+            var rp = realPrices[key];
+            var rpid = rp.product_id.trim();
+            // Skip if already shown via basket match
+            if (usedRealPids[rpid] || seenPids[rpid]) return;
+            seenPids[rpid] = true;
+            var rPrice = parseFloat(rp.price);
+            var rCurr = rp.currency || currency;
+            var cleanName = (rp.product_name||rpid)
+              .replace(/[Ѐ-ӿ]/g,'').replace(/\s*\([^)]*\)/g,'').trim()
+              || rpid.replace(/_/g,' ');
+            total += rPrice;
+            lines.push({
+              pid: rpid, displayName: cleanName,
+              qty: 1, unit: rp.unit||'pcs',
+              price: rPrice, line: rPrice,
+              saving: 0, hasOffer: true, isReal: true,
+              currency: rCurr, fromAdmin: true
+            });
+          });
+        }
 
         // STEP 3: Sort — real prices first, then by price
     lines.sort(function(a,b){
