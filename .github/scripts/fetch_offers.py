@@ -125,7 +125,9 @@ def main():
     for product in PRODUCTS:
         offers = search_offers(product, api_key)
         all_offers.extend(offers)
-        print(product + ": " + str(len(offers)) + " offers")
+        if offers and product == "Milch":
+                    print("SAMPLE: " + json.dumps(offers[0], ensure_ascii=False))
+
 
     print("Total raw: " + str(len(all_offers)))
     rows = parse_rows(all_offers)
