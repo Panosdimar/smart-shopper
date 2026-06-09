@@ -22,66 +22,8 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          python3 << 'PYEOF'
-          import os, re, json, requests
-          from supabase import create_client
-          from datetime import datetime, timedelta
-          sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_KEY"])
-          ZIP = "79639"
-          STORE_MAP = {"lidl":"lidl_de","aldi":"aldi_de","rewe":"rewe_de","edeka":"edeka_de","kaufland":"kaufland_de","penny":"penny_de"}
-          PRODUCTS = ["Milch","Eier","Butter","Joghurt","Haehnchen","Hackfleisch","Lachs","Wurst","Brot","Nudeln","Reis","Apfel","Banane","Tomate","Kartoffel","Wasser","Kaffee","Chips","Schokolade"]
-          def get_key():
-              try:
-                  r = requests.get("https://www.marktguru.de/", timeout=10, headers={"User-Agent":"Mozilla/5.0"})
-                  m = re.search(r'"apiKey"\s*:\s*"([^"]+)"', r.text)
-                  if m: return m.group(1)
-              except: pass
-              return "mg-api-key"
-          def search(q, key):
-              try:
-                                      r = requests.get("https://api.marktguru.de/api/v1/offers/search", headers={"x-apikey":key,"accept":"application/json"}, params={"as":"web","limit":15,"q":q,"zipCode":ZIP}, timeout=10)
-          if r.status_code == 200: return r.json().get("offers", [])
-          return r.json().get("offers", [])
-              except: pass
-              return []
-          def parse(offers):
-              rows, seen = [], set()
-              week_end = (datetime.utcnow()+timedelta(days=7)).strftime("%Y-%m-%d")
-              for o in offers:
-                  try:
-                      name = o.get("description", o.get("product",{}).get("name",""))
-                      price = float(o.get("price",0) or 0)
-                      old_price = float(o.get("oldPrice") or o.get("referencePrice") or price)
-                      offer_id = str(o.get("id",""))
-                      image_url = "https://images.marktguru.de/offers/"+offer_id+"/w300.jpg"
-                      ads = o.get("advertisers",[])
-                      if not ads: continue
-                      store_name = ads[0].get("name","")
-                      unit_obj = o.get("unit",{})
-                      unit = unit_obj.get("shortName","pcs") if isinstance(unit_obj,dict) else "pcs"
-                      validity = o.get("validityDates",[])
-                      valid_until = validity[0].get("to",week_end)[:10] if validity else week_end
-                      if not name or not price or not store_name: continue
-                      store_id = next((sid for k,sid in STORE_MAP.items() if k in store_name.lower()), None)
-                      if not store_id: continue
-                      pid = re.sub("[^a-z0-9]+","_",name.lower()).strip("_")[:50]
-                      if pid+"_"+store_id in seen: continue
-                      seen.add(pid+"_"+store_id)
-                      rows.append({"store_id":store_id,"store_name":store_name,"store_flag":"DE","product_id":pid,"product_name":name,"price":price,"old_price":old_price,"offer_id":offer_id,"image_url":image_url,"currency":"EUR","unit":unit,"valid_until":valid_until,"created_at":datetime.utcnow().isoformat()})
-                  except Exception as e: print("err:"+str(e))
-              return rows
-          key = get_key()
-          print("Key: "+key[:10])
-          all_offers = []
-          for p in PRODUCTS:
-              offers = search(p, key)
-              all_offers.extend(offers)
-              print(p+": "+str(len(offers)))
-          rows = parse(all_offers)
-          print("Parsed: "+str(len(rows)))
-          if rows:
-              for sid in set(r["store_id"] for r in rows):
-                  sb.table("prices").delete().eq("store_id",sid).execute()
-              sb.table("prices").insert(rows).execute()
-              print("Saved "+str(len(rows))+"!")
-          PYEOF
+          python3 -c "
+          import base64,os,subprocess
+          code = 'aW1wb3J0IG9zLCByZSwganNvbiwgcmVxdWVzdHMKZnJvbSBzdXBhYmFzZSBpbXBvcnQgY3JlYXRlX2NsaWVudApmcm9tIGRhdGV0aW1lIGltcG9ydCBkYXRldGltZSwgdGltZWRlbHRhCgpzYiA9IGNyZWF0ZV9jbGllbnQob3MuZW52aXJvblsnU1VQQUJBU0VfVVJMJ10sIG9zLmVudmlyb25bJ1NVUEFCQVNFX0tFWSddKQpaSVAgPSAnNzk2MzknClNUT1JFX01BUCA9IHsnbGlkbCc6J2xpZGxfZGUnLCdhbGRpJzonYWxkaV9kZScsJ3Jld2UnOidyZXdlX2RlJywnZWRla2EnOidlZGVrYV9kZScsJ2thdWZsYW5kJzona2F1ZmxhbmRfZGUnLCdwZW5ueSc6J3Blbm55X2RlJ30KUFJPRFVDVFMgPSBbJ01pbGNoJywnRWllcicsJ0J1dHRlcicsJ0pvZ2h1cnQnLCdIYWVobmNoZW4nLCdIYWNrZmxlaXNjaCcsJ0xhY2hzJywnV3Vyc3QnLCdCcm90JywnTnVkZWxuJywnUmVpcycsJ0FwZmVsJywnQmFuYW5lJywnVG9tYXRlJywnS2FydG9mZmVsJywnV2Fzc2VyJywnS2FmZmVlJywnQ2hpcHMnLCdTY2hvY29sYWRlJ10KCmRlZiBnZXRfa2V5KCk6CiAgICB0cnk6CiAgICAgICAgciA9IHJlcXVlc3RzLmdldCgnaHR0cHM6Ly93d3cubWFya3RndXJ1LmRlLycsIHRpbWVvdXQ9MTAsIGhlYWRlcnM9eydVc2VyLUFnZW50JzonTW96aWxsYS81LjAnfSkKICAgICAgICBtID0gcmUuc2VhcmNoKHInImFwaUtleVxzKjpccyoiKFteIl0rKSInLCByLnRleHQpCiAgICAgICAgaWYgbTogcmV0dXJuIG0uZ3JvdXAoMSkKICAgIGV4Y2VwdDogcGFzcwogICAgcmV0dXJuICdtZy1hcGkta2V5JwoKZGVmIHNlYXJjaChxLCBrZXkpOgogICAgdHJ5OgogICAgICAgIHIgPSByZXF1ZXN0cy5nZXQoJ2h0dHBzOi8vYXBpLm1hcmt0Z3VydS5kZS9hcGkvdjEvb2ZmZXJzL3NlYXJjaCcsIGhlYWRlcnM9eyd4LWFwaWtleSc6a2V5LCdhY2NlcHQnOidhcHBsaWNhdGlvbi9qc29uJ30sIHBhcmFtcz17J2FzJzond2ViJywnbGltaXQnOjE1LCdxJzpxLCd6aXBDb2RlJzpaSVB9LCB0aW1lb3V0PTEwKQogICAgICAgIHByaW50KCdTdGF0dXMgJytzdHIoci5zdGF0dXNfY29kZSkrJyBmb3IgJytxKQogICAgICAgIGlmIHIuc3RhdHVzX2NvZGUgPT0gMjAwOiByZXR1cm4gci5qc29uKCkuZ2V0KCdvZmZlcnMnLCBbXSkKICAgIGV4Y2VwdCBFeGNlcHRpb24gYXMgZTogcHJpbnQoJ0VycjonK3N0cihlKSkKICAgIHJldHVybiBbXQoKZGVmIHBhcnNlKG9mZmVycyk6CiAgICByb3dzLCBzZWVuID0gW10sIHNldCgpCiAgICB3ZWVrX2VuZCA9IChkYXRldGltZS51dGNub3coKSt0aW1lZGVsdGEoZGF5cz03KSkuc3RyZnRpbWUoJyVZLSVtLSVkJykKICAgIGZvciBvIGluIG9mZmVyczoKICAgICAgICB0cnk6CiAgICAgICAgICAgIG5hbWUgPSBvLmdldCgnZGVzY3JpcHRpb24nLCBvLmdldCgncHJvZHVjdCcse30pLmdldCgnbmFtZScsJycpKQogICAgICAgICAgICBwcmljZSA9IGZsb2F0KG8uZ2V0KCdwcmljZScsMCkgb3IgMCkKICAgICAgICAgICAgb2xkX3ByaWNlID0gZmxvYXQoby5nZXQoJ29sZFByaWNlJykgb3Igby5nZXQoJ3JlZmVyZW5jZVByaWNlJykgb3IgcHJpY2UpCiAgICAgICAgICAgIG9mZmVyX2lkID0gc3RyKG8uZ2V0KCdpZCcsJycpKQogICAgICAgICAgICBpbWFnZV91cmwgPSAnaHR0cHM6Ly9pbWFnZXMubWFya3RndXJ1LmRlL29mZmVycy8nK29mZmVyX2lkKycvdzMwMC5qcGcnCiAgICAgICAgICAgIGFkcyA9IG8uZ2V0KCdhZHZlcnRpc2VycycsW10pCiAgICAgICAgICAgIGlmIG5vdCBhZHM6IGNvbnRpbnVlCiAgICAgICAgICAgIHN0b3JlX25hbWUgPSBhZHNbMF0uZ2V0KCduYW1lJywnJykKICAgICAgICAgICAgdW5pdF9vYmogPSBvLmdldCgndW5pdCcse30pCiAgICAgICAgICAgIHVuaXQgPSB1bml0X29iai5nZXQoJ3Nob3J0TmFtZScsJ3BjcycpIGlmIGlzaW5zdGFuY2UodW5pdF9vYmosZGljdCkgZWxzZSAncGNzJwogICAgICAgICAgICB2YWxpZGl0eSA9IG8uZ2V0KCd2YWxpZGl0eURhdGVzJyxbXSkKICAgICAgICAgICAgdmFsaWRfdW50aWwgPSB2YWxpZGl0eVswXS5nZXQoJ3RvJyx3ZWVrX2VuZClbOjEwXSBpZiB2YWxpZGl0eSBlbHNlIHdlZWtfZW5kCiAgICAgICAgICAgIGlmIG5vdCBuYW1lIG9yIG5vdCBwcmljZSBvciBub3Qgc3RvcmVfbmFtZTogY29udGludWUKICAgICAgICAgICAgc3RvcmVfaWQgPSBuZXh0KChzaWQgZm9yIGssc2lkIGluIFNUT1JFX01BUC5pdGVtcygpIGlmIGsgaW4gc3RvcmVfbmFtZS5sb3dlcigpKSwgTm9uZSkKICAgICAgICAgICAgaWYgbm90IHN0b3JlX2lkOiBjb250aW51ZQogICAgICAgICAgICBwaWQgPSByZS5zdWIoJ1teYS16MC05XSsnLCdfJyxuYW1lLmxvd2VyKCkpLnN0cmlwKCdfJylbOjUwXQogICAgICAgICAgICBpZiBwaWQrJ18nK3N0b3JlX2lkIGluIHNlZW46IGNvbnRpbnVlCiAgICAgICAgICAgIHNlZW4uYWRkKHBpZCsnXycrc3RvcmVfaWQpCiAgICAgICAgICAgIHJvd3MuYXBwZW5kKHsnc3RvcmVfaWQnOnN0b3JlX2lkLCdzdG9yZV9uYW1lJzpzdG9yZV9uYW1lLCdzdG9yZV9mbGFnJzonREUnLCdwcm9kdWN0X2lkJzpwaWQsJ3Byb2R1Y3RfbmFtZSc6bmFtZSwncHJpY2UnOnByaWNlLCdvbGRfcHJpY2UnOm9sZF9wcmljZSwnb2ZmZXJfaWQnOm9mZmVyX2lkLCdpbWFnZV91cmwnOmltYWdlX3VybCwnY3VycmVuY3knOidFVVInLCd1bml0Jzp1bml0LCd2YWxpZF91bnRpbCc6dmFsaWRfdW50aWwsJ2NyZWF0ZWRfYXQnOmRhdGV0aW1lLnV0Y25vdygpLmlzb2Zvcm1hdCgpfSkKICAgICAgICBleGNlcHQgRXhjZXB0aW9uIGFzIGU6IHByaW50KCdlcnI6JytzdHIoZSkpCiAgICByZXR1cm4gcm93cwoKa2V5ID0gZ2V0X2tleSgpCnByaW50KCdLZXk6ICcra2V5WzoxMF0pCmFsbF9vZmZlcnMgPSBbXQpmb3IgcCBpbiBQUk9EVUNUUzoKICAgIG9mZmVycyA9IHNlYXJjaChwLCBrZXkpCiAgICBhbGxfb2ZmZXJzLmV4dGVuZChvZmZlcnMpCiAgICBwcmludChwKyc6ICcrc3RyKGxlbihvZmZlcnMpKSkKcm93cyA9IHBhcnNlKGFsbF9vZmZlcnMpCnByaW50KCdQYXJzZWQ6ICcrc3RyKGxlbihyb3dzKSkpCmlmIHJvd3M6CiAgICBmb3Igc2lkIGluIHNldChyWydzdG9yZV9pZCddIGZvciByIGluIHJvd3MpOgogICAgICAgIHNiLnRhYmxlKCdwcmljZXMnKS5kZWxldGUoKS5lcSgnc3RvcmVfaWQnLHNpZCkuZXhlY3V0ZSgpCiAgICBzYi50YWJsZSgncHJpY2VzJykuaW5zZXJ0KHJvd3MpLmV4ZWN1dGUoKQogICAgcHJpbnQoJ1NhdmVkICcrc3RyKGxlbihyb3dzKSkrJyEnKQo='
+          exec(base64.b64decode(code).decode())
+          "
