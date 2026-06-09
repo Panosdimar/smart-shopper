@@ -107,9 +107,9 @@ def parse_rows(offers):
                 continue
             seen.add(dedup)
             
-            offer_id = str(o.get("id", ""))
-                        old_price = float(o.get("oldPrice") or o.get("referencePrice") or price)
-                        image_url = "https://images.marktguru.de/offers/" + offer_id + "/w300.jpg" if offer_id else ""
+                        offer_id = str(o.get("id", ""))
+            old_price = float(o.get("oldPrice") or o.get("referencePrice") or price)
+            image_url = "https://images.marktguru.de/offers/" + offer_id + "/w300.jpg" if offer_id else ""
 
             rows.append({
                 "store_id": store_id,
@@ -121,10 +121,10 @@ def parse_rows(offers):
                 "currency": "EUR",
                 "unit": unit,
                 "valid_until": valid_until,
-                "created_at": datetime.utcnow().isoformat()
-                 "offer_id": offer_id,
-                 "image_url": image_url,
-                 "old_price": old_price,
+                "created_at": datetime.utcnow().isoformat(),
+                "offer_id": offer_id,
+                "image_url": image_url,
+                "old_price": old_price
             })
         except Exception as e:
             print("Parse error: " + str(e))
@@ -139,10 +139,7 @@ def main():
     for product in PRODUCTS:
         offers = search_offers(product, api_key)
         all_offers.extend(offers)
-        if offers and product == "Milch":
-                    print("SAMPLE: " + json.dumps(offers[0], ensure_ascii=False))
-        if offers and product == "Milch":
-                    print("IMAGE DATA: " + json.dumps(offers[0].get("images", {}), ensure_ascii=False))
+        print(product + ": " + str(len(offers)) + " offers")
 
     print("Total raw: " + str(len(all_offers)))
     rows = parse_rows(all_offers)
