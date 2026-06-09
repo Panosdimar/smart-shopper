@@ -40,7 +40,8 @@ jobs:
           def search(q, key):
               try:
                   r = requests.get("https://api.marktguru.de/api/v1/offers/search", headers={"x-apikey":key,"accept":"application/json"}, params={"as":"web","limit":15,"q":q,"zipCode":ZIP}, timeout=10)
-                  if r.status_code == 200: return r.json().get("offers", [])
+                  print("Status "+q+": "+str(r.status_code))
+               if r.status_code == 200: return r.json().get("offers", [])
               except: pass
               return []
           def parse(offers):
