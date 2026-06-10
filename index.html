@@ -1348,7 +1348,7 @@ function switchMainTab(tab) {
   } else if (tab === 'offers') {
     var mo = document.getElementById('mainOffers');
     if (mo) mo.style.display = 'block';
-    renderOffers();
+    loadOffersFromSupabase();
   }
 
   ['shopper','scan','receipt','price','cards'].forEach(function(t) {
