@@ -1354,7 +1354,7 @@ var sc = document.getElementById('shopperContainer');
     loadOffersFromSupabase();
   }
 
-  ['shopper','scan','receipt','price','cards'].forEach(function(t) {
+    ['shopper','scan','receipt','price','offers','cards'].forEach(function(t) {
     var btn = document.getElementById('nav' + t.charAt(0).toUpperCase() + t.slice(1));
     if (btn) btn.classList.toggle('active', t === tab);
   });
