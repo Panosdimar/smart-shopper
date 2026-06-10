@@ -1323,16 +1323,19 @@ function switchMainTab(tab) {
   if (tab !== 'scan' && scanState.active) stopScan();
 
   // Hide all
-  var sc = document.getElementById('shopperContainer');
+var sc = document.getElementById('shopperContainer');
   var ms = document.getElementById('mainScan');
   var mp = document.getElementById('mainPrice');
   var mr = document.getElementById('mainReceipt');
   var mc = document.getElementById('mainCards');
+  var mo = document.getElementById('mainOffers');
   if (sc) sc.style.display = 'none';
   if (ms) ms.style.display = 'none';
   if (mp) mp.style.display = 'none';
   if (mr) mr.style.display = 'none';
   if (mc) mc.style.display = 'none';
+  if (mo) mo.style.display = 'none';
+
 
   if (tab === 'shopper') {
     if (sc) sc.style.display = 'block';
