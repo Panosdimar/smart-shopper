@@ -1319,9 +1319,10 @@ function switchMainTab(tab) {
     if (mr) mr.style.display = 'block';
     renderReceiptHistory();
     updateBudgetUI();
-  } else if (tab === 'cards') {
-    if (mc) mc.style.display = 'block';
-    renderLoyaltyCards();
+  } else if (tab === 'offers') {
+    var mo = document.getElementById('mainOffers');
+    if (mo) mo.style.display = 'block';
+    renderOffers();
   }
 
   ['shopper','scan','receipt','price','cards'].forEach(function(t) {
