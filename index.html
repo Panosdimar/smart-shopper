@@ -1348,10 +1348,14 @@ var sc = document.getElementById('shopperContainer');
     if (mr) mr.style.display = 'block';
     renderReceiptHistory();
     updateBudgetUI();
-  } else if (tab === 'offers') {
+    } else if (tab === 'offers') {
     var mo = document.getElementById('mainOffers');
     if (mo) mo.style.display = 'block';
     loadOffersFromSupabase();
+  } else if (tab === 'cards') {
+    var mc = document.getElementById('mainCards');
+    if (mc) mc.style.display = 'block';
+    renderLoyaltyCards();
   }
 
     ['shopper','scan','receipt','price','offers','cards'].forEach(function(t) {
