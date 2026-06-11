@@ -78,7 +78,7 @@ for o in offers:
         price = float(o.get("price", 0) or 0)
         old_price = float(o.get("oldPrice") or o.get("referencePrice") or price)
         offer_id = str(o.get("id", ""))
-        image_url = "https://images.marktguru.de/offers/" + offer_id + "/w300.jpg"
+        image_url = 'https://www.marktguru.de/offers/'+offer_id
 
         advertisers = o.get("advertisers", [])
         if not advertisers:
