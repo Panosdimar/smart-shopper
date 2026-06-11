@@ -2380,7 +2380,7 @@ var pricesLoaded = false;
 async function loadRealPrices() {
   try {
     var today = new Date().toISOString().split('T')[0];
-    var data = await sbGet('prices?select=*&order=created_at.desc&limit=500');
+    var data = await sbGet('prices?select=*&not.image_url.is.null&order=price.asc&limit=500');
     realPrices = {};
     data.forEach(function(p) {
       var sid = p.store_id.trim();
