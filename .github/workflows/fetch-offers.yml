@@ -17,12 +17,89 @@ jobs:
       - name: Install dependencies
         run: pip install requests supabase
 
-      - name: Fetch and save offers
+      - name: Write script
+        run: |
+          cat > /tmp/fetch.py << 'ENDOFSCRIPT'
+          import os,re,json,requests
+          from supabase import create_client
+          from datetime import datetime,timedelta
+          sb=create_client(os.environ["SUPABASE_URL"],os.environ["SUPABASE_KEY"])
+          SB_URL=os.environ["SUPABASE_URL"]
+          SB_KEY=os.environ["SUPABASE_KEY"]
+          ZIP="79639"
+          STORE_MAP={"lidl":"lidl_de","aldi":"aldi_de","rewe":"rewe_de","edeka":"edeka_de","kaufland":"kaufland_de","penny":"penny_de"}
+          PRODUCTS=["Milch","Eier","Butter","Joghurt","Haehnchen","Hackfleisch","Lachs","Wurst","Brot","Nudeln","Reis","Apfel","Banane","Tomate","Kartoffel","Wasser","Kaffee","Chips","Schokolade"]
+          def get_key():
+            try:
+              r=requests.get("https://www.marktguru.de/",timeout=10,headers={"User-Agent":"Mozilla/5.0"})
+              m=re.search(r'"apiKey"\s*:\s*"([^"]+)"',r.text)
+              if m: return m.group(1)
+            except: pass
+            return "mg-api-key"
+          def upload_image(offer_id,mg_url):
+            try:
+              r=requests.get(mg_url,timeout=10,headers={"User-Agent":"Mozilla/5.0","Referer":"https://www.marktguru.de/"})
+              if r.status_code==200 and len(r.content)>1000:
+                path="offers/"+offer_id+".jpg"
+                url=SB_URL+"/storage/v1/object/offer-images/"+path
+                hdrs={"Authorization":"Bearer "+SB_KEY,"Content-Type":"image/jpeg","x-upsert":"true"}
+                resp=requests.post(url,data=r.content,headers=hdrs,timeout=15)
+                if resp.status_code in [200,201]:
+                  return SB_URL+"/storage/v1/object/public/offer-images/"+path
+            except Exception as e: print("img err:"+str(e))
+            return ""
+          def search(q,key):
+            try:
+              r=requests.get("https://api.marktguru.de/api/v1/offers/search",headers={"x-apikey":key,"accept":"application/json"},params={"as":"web","limit":15,"q":q,"zipCode":ZIP},timeout=10)
+              if r.status_code==200: return r.json().get("offers",[])
+            except Exception as e: print("err:"+str(e))
+            return []
+          def parse(offers):
+            rows,seen=[],set()
+            week_end=(datetime.utcnow()+timedelta(days=7)).strftime("%Y-%m-%d")
+            for o in offers:
+              try:
+                name=o.get("description",o.get("product",{}).get("name",""))
+                price=float(o.get("price",0) or 0)
+                old_price=float(o.get("oldPrice") or o.get("referencePrice") or price)
+                offer_id=str(o.get("id",""))
+                mg_image="https://images.marktguru.de/offers/"+offer_id+"/w300.jpg"
+                ads=o.get("advertisers",[])
+                if not ads: continue
+                store_name=ads[0].get("name","")
+                unit_obj=o.get("unit",{})
+                unit=unit_obj.get("shortName","pcs") if isinstance(unit_obj,dict) else "pcs"
+                validity=o.get("validityDates",[])
+                valid_until=validity[0].get("to",week_end)[:10] if validity else week_end
+                if not name or not price or not store_name: continue
+                store_id=next((sid for k,sid in STORE_MAP.items() if k in store_name.lower()),None)
+                if not store_id: continue
+                pid=re.sub("[^a-z0-9]+","_",name.lower()).strip("_")[:50]
+                if pid+"_"+store_id in seen: continue
+                seen.add(pid+"_"+store_id)
+                image_url=upload_image(offer_id,mg_image)
+                rows.append({"store_id":store_id,"store_name":store_name,"store_flag":"DE","product_id":pid,"product_name":name,"price":price,"old_price":old_price,"offer_id":offer_id,"image_url":image_url,"currency":"EUR","unit":unit,"valid_until":valid_until,"created_at":datetime.utcnow().isoformat()})
+              except Exception as e: print("err:"+str(e))
+            return rows
+          key=get_key()
+          print("Key: "+key[:10])
+          all_offers=[]
+          for p in PRODUCTS:
+            offers=search(p,key)
+            all_offers.extend(offers)
+            print(p+": "+str(len(offers)))
+          rows=parse(all_offers)
+          print("Parsed: "+str(len(rows)))
+          if rows:
+            for sid in set(r["store_id"] for r in rows):
+              sb.table("prices").delete().eq("store_id",sid).execute()
+            sb.table("prices").insert(rows).execute()
+            print("Saved "+str(len(rows))+"!")
+          ENDOFSCRIPT
+          python3 /tmp/fetch.py
+
+      - name: Run
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: |
-          python3 -c "
-          import base64
-          code = 'aW1wb3J0IG9zLCByZSwganNvbiwgcmVxdWVzdHMKZnJvbSBzdXBhYmFzZSBpbXBvcnQgY3JlYXRlX2NsaWVudApmcm9tIGRhdGV0aW1lIGltcG9ydCBkYXRldGltZSwgdGltZWRlbHRhCgpzYiA9IGNyZWF0ZV9jbGllbnQob3MuZW52aXJvblsiU1VQQUJBU0VfVVJMIl0sIG9zLmVudmlyb25bIlNVUEFCQVNF
-
+        run: python3 /tmp/fetch.py
