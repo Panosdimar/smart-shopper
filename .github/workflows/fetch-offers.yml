@@ -17,7 +17,10 @@ jobs:
       - name: Install dependencies
         run: pip install requests supabase
 
-      - name: Write script
+            - name: Write and run script
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
           cat > /tmp/fetch.py << 'ENDOFSCRIPT'
           import os,re,json,requests
@@ -97,9 +100,3 @@ jobs:
             print("Saved "+str(len(rows))+"!")
           ENDOFSCRIPT
           python3 /tmp/fetch.py
-
-      - name: Run
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: python3 /tmp/fetch.py
