@@ -17,7 +17,7 @@ jobs:
       - name: Install dependencies
         run: pip install requests supabase
 
-            - name: Write and run script
+      - name: Write and run script
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
