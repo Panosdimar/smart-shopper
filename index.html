@@ -2650,6 +2650,7 @@ async function runReceiptOCR() {
     var rawText = result.data.text;
     document.getElementById('receiptRaw').textContent = rawText;
     document.getElementById('receiptRawWrap').style.display = 'block';
+    document.getElementById('receiptImg').src = imageDataUrl;
     setText('Analysing with AI...');
     setBar(92);
     var parsed = await parseReceiptWithAI(rawText);
