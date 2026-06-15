@@ -2678,20 +2678,62 @@ async function runReceiptOCR() {
 }
 async function parseReceiptWithAI(rawText) {
   try {
+    var imgEl = document.getElementById('receiptImg');
+    var imageData = null;
+    var mediaType = 'image/jpeg';
+
+    if (imgEl && imgEl.src && imgEl.src.startsWith('data:')) {
+      var parts = imgEl.src.split(',');
+      imageData = parts[1];
+      mediaType = imgEl.src.includes('png') ? 'image/png' : 'image/jpeg';
+    }
+
+    var content = [];
+
+    if (imageData) {
+      content.push({
+        type: 'image',
+        source: {
+          type: 'base64',
+          media_type: mediaType,
+          data: imageData
+        }
+      });
+      content.push({
+        type: 'text',
+        text: 'This is a supermarket receipt photo. Extract ALL items with prices. Return ONLY valid JSON: {"store":"store name","date":"YYYY-MM-DD or null","currency":"EUR or CHF","total":number,"items":[{"name":"product name","price":number}]}. Include every product line. Ignore MwSt/TVA tax lines and subtotals. For German receipts use EUR, Swiss use CHF.'
+      });
+    } else {
+      content.push({
+        type: 'text',
+        text: 'Parse this supermarket receipt text. Return ONLY valid JSON: {"store":"store name","date":"YYYY-MM-DD or null","currency":"EUR or CHF","total":number,"items":[{"name":"product name","price":number}]}. Extract ALL items with prices. OCR text:\n\n' + rawText
+      });
+    }
+
     var resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':'ANTHROPIC_API_KEY',
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        messages:[{role:'user',content:'Parse this German supermarket receipt OCR text. Return ONLY valid JSON with this structure: {"store":"store name","date":"YYYY-MM-DD or null","currency":"EUR or CHF","total":number,"items":[{"name":"product name","price":number}]}. Extract ALL line items with prices. Ignore tax lines, totals, headers. OCR text:\n\n'+rawText}]
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'ANTHROPIC_API_KEY',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2000,
+        messages: [{role: 'user', content: content}]
       })
     });
+
+    var data = await resp.json();
+    var txt = data.content[0].text;
+    var clean = txt.replace(/```json|```/g, '').trim();
+    return JSON.parse(clean);
+  } catch(e) {
+    console.log('AI parse failed:', e);
+    return parseReceiptText(rawText);
+  }
+}
     var data = await resp.json();
     var txt = data.content[0].text;
     var clean = txt.replace(/```json|```/g,'').trim();
