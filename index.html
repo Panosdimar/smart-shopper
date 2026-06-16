@@ -2735,15 +2735,7 @@ async function parseReceiptWithAI(rawText) {
     return parseReceiptText(rawText);
   }
 }
-    var data = await resp.json();
-    var txt = data.content[0].text;
-    var clean = txt.replace(/```json|```/g,'').trim();
-    return JSON.parse(clean);
-  } catch(e) {
-    console.log('AI parse failed, using regex:', e);
-    return parseReceiptText(rawText);
-  }
-}
+
 function parseReceiptText(text) {
   var lines = text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
   var items = [];
