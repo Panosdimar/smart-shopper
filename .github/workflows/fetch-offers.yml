@@ -56,7 +56,10 @@ jobs:
             try:
               r=requests.get("https://api.marktguru.de/api/v1/offers/search",headers={"x-apikey":key,"accept":"application/json"},params={"as":"web","limit":15,"q":q,"zipCode":ZIP},timeout=10)
               print("status:"+str(r.status_code))
-              if r.status_code==200: return r.json().get("offers",[])
+              if r.status_code==200:
+                      j=r.json()
+                      print("keys:"+str(list(j.keys())))
+                      return j.get("offers",j.get("results",[]))
             except Exception as e: print("err:"+str(e))
             return []
           def parse(offers):
