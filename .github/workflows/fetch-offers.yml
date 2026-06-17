@@ -50,6 +50,7 @@ jobs:
                 if resp.status_code in [200,201]:
                   return SB_URL+"/storage/v1/object/public/offer-images/"+path
             except Exception as e: print("img err:"+str(e))
+            print("img status: "+str(r.status_code if 'r' in dir() else 'no response')+" len:"+str(len(r.content) if 'r' in dir() else 0))
             return ""
           def search(q,key):
             try:
