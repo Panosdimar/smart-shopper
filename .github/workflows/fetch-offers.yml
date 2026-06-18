@@ -97,6 +97,9 @@ jobs:
             offers=search(p,key)
             all_offers.extend(offers)
             print(p+": "+str(len(offers)))
+            ch_offers=fetch_migros()
+            all_offers.extend(ch_offers)
+            print("Migros CH: "+str(len(ch_offers)))
           rows=parse(all_offers)
           print("Parsed: "+str(len(rows)))
           if rows:
