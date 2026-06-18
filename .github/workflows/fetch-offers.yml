@@ -30,7 +30,8 @@ jobs:
           SB_URL=os.environ["SUPABASE_URL"]
           SB_KEY=os.environ["SUPABASE_KEY"]
           ZIP="79639"
-          STORE_MAP={"lidl":"lidl_de","aldi":"aldi_de","rewe":"rewe_de","edeka":"edeka_de","kaufland":"kaufland_de","penny":"penny_de"}
+          STORE_MAP={"lidl":"lidl_de","aldi":"aldi_de","rewe":"rewe_de","edeka":"edeka_de","kaufland":"kaufland_de","penny":"penny_de","migros":"migros_ch","coop":"coop_ch","denner":"denner_ch"}
+          CH_ZIP="4001"
           PRODUCTS=["Milch","Eier","Butter","Joghurt","Haehnchen","Hackfleisch","Lachs","Wurst","Brot","Nudeln","Reis","Apfel","Banane","Tomate","Kartoffel","Wasser","Kaffee","Chips","Schokolade"]
           def get_key():
             try:
