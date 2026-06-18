@@ -47,6 +47,7 @@ jobs:
                 url=SB_URL+"/storage/v1/object/offer-images/"+path
                 hdrs={"Authorization":"Bearer "+SB_KEY,"Content-Type":"image/jpeg","x-upsert":"true"}
                 resp=requests.post(url,data=r.content,headers=hdrs,timeout=15)
+                print("upload status:"+str(resp.status_code)+" "+resp.text[:100])
                 if resp.status_code in [200,201]:
                   return SB_URL+"/storage/v1/object/public/offer-images/"+path
             except Exception as e: print("img err:"+str(e))
