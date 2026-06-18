@@ -55,20 +55,14 @@ jobs:
             print("img status: "+str(r.status_code if 'r' in dir() else 'no response')+" len:"+str(len(r.content) if 'r' in dir() else 0))
             return ""
           def search(q,key):
-            try:
-              r=requests.get("https://api.marktguru.de/api/v1/offers/search",headers={"x-apikey":key,"accept":"application/json"},params={"as":"web","limit":15,"q":q,"zipCode":ZIP},timeout=10)
-               r2=requests.get("https://api.marktguru.de/api/v1/offers/search",headers={"x-apikey":key,"accept":"application/json"},params={"as":"web","limit":15,"q":q,"zipCode":CH_ZIP},timeout=10)
-               if r2.status_code==200:
-                 results2=r2.json().get("results",[])
-                 if r.status_code==200:
-                   r.json()["results"].extend(results2)
-              print("status:"+str(r.status_code))
-              if r.status_code==200:
-                      j=r.json()
-                      print("keys:"+str(list(j.keys())))
-                      return j.get("offers",j.get("results",[]))
-            except Exception as e: print("err:"+str(e))
-            return []
+            results=[]
+            for zip_code in [ZIP,"4001"]:
+              try:
+                r=requests.get("https://api.marktguru.de/api/v1/offers/search",headers={"x-apikey":key,"accept":"application/json"},params={"as":"web","limit":15,"q":q,"zipCode":zip_code},timeout=10)
+                if r.status_code==200:
+                  results.extend(r.json().get("results",[]))
+              except Exception as e: print("err:"+str(e))
+            return results
           def parse(offers):
             rows,seen=[],set()
             week_end=(datetime.utcnow()+timedelta(days=7)).strftime("%Y-%m-%d")
