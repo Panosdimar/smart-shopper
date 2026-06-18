@@ -100,7 +100,8 @@ jobs:
                 if pid+"_"+store_id in seen: continue
                 seen.add(pid+"_"+store_id)
                 image_url=upload_image(offer_id,mg_image)
-                rows.append({"store_id":store_id,"store_name":store_name,"store_flag":"DE","product_id":pid,"product_name":name,"price":price,"old_price":old_price,"offer_id":offer_id,"image_url":image_url,"currency":"EUR","unit":unit,"valid_until":valid_until,"created_at":datetime.utcnow().isoformat()})
+                is_ch=store_id.endswith("_ch")
+                 rows.append({"store_id":store_id,"store_name":store_name,"store_flag":"CH" if is_ch else "DE","product_id":pid,"product_name":name,"price":price,"old_price":old_price,"offer_id":offer_id,"image_url":image_url,"currency":"CHF" if is_ch else "EUR","unit":unit,"valid_until":valid_until,"created_at":datetime.utcnow().isoformat()})
               except Exception as e: print("err:"+str(e))
             return rows
           key=get_key()
