@@ -73,7 +73,15 @@ jobs:
               if r.status_code==200:
                 data=r.json()
                 print("Migros keys: "+str(list(data.keys())))
-                return data.get("products",data.get("results",[]))
+                products=data.get("products",data.get("results",[]))
+                for p in products:
+                  if p.get("imageUrl"):
+                    p["_migros_image"]=p["imageUrl"]
+                  ads=[{"name":"Migros"}]
+                  p["advertisers"]=ads
+                  p["description"]=p.get("name","")
+                  p["validityDates"]=[{"to":p.get("promotionEndDate","")}] if p.get("promotionEndDate") else []
+                return products
             except Exception as e: print("Migros err:"+str(e))
             return []
           def parse(offers):
