@@ -71,7 +71,7 @@ jobs:
                 price=float(o.get("price",0) or 0)
                 old_price=float(o.get("oldPrice") or o.get("referencePrice") or price)
                 offer_id=str(o.get("id",""))
-                mg_image="https://images.marktguru.de/offers/"+offer_id+"/w300.jpg"
+                mg_image="https://cdn.marktguru.de/api/v1/offers/"+offer_id+"/images/default/0/medium.webp"
                 ads=o.get("advertisers",[])
                 if not ads: continue
                 store_name=ads[0].get("name","")
