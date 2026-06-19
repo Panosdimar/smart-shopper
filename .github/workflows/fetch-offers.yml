@@ -63,18 +63,27 @@ jobs:
           def fetch_migros():
             try:
               url="https://www.migros.ch/product-display/public/web/v2/products/promotion/search"
-              headers={"User-Agent":"Mozilla/5.0","Accept":"application/json","Accept-Language":"de-CH"}
-              params={"pageSize":100,"currentPage":0}
+              headers={
+                "User-Agent":"Migros-App/22.0 (iPhone; iOS 17.0)",
+                "Accept":"application/json",
+                "Accept-Language":"de-CH,de;q=0.9",
+                "x-migros-language":"de",
+                "x-request-source":"migros-app"
+              }
+              params={"pageSize":100,"currentPage":0,"marketCode":"STD"}
               r=requests.get(url,headers=headers,params=params,timeout=15)
               print("Migros status: "+str(r.status_code))
               if r.status_code==200:
                 data=r.json()
+                print("Migros keys: "+str(list(data.keys())))
                 products=data.get("products",data.get("results",[]))
                 for p in products:
                   p["advertisers"]=[{"name":"Migros"}]
                   p["description"]=p.get("name","")
                   p["validityDates"]=[{"to":p.get("promotionEndDate","")}] if p.get("promotionEndDate") else []
                 return products
+              else:
+                print("Migros response: "+r.text[:200])
             except Exception as e: print("Migros err:"+str(e))
             return []
           def parse(offers):
