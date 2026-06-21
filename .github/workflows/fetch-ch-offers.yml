@@ -15,7 +15,11 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install @supabase/supabase-js node-fetch
+              run: |
+                mkdir -p /tmp/nodemodules
+                cd /tmp/nodemodules
+                npm init -y
+                npm install @supabase/supabase-js node-fetch
 
       - name: Fetch CH offers
         env:
