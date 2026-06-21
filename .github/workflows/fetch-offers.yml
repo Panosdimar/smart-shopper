@@ -52,14 +52,17 @@ jobs:
             except Exception as e: print("img err:"+str(e))
             return ""
           def search(q,key):
-            results=[]
-            for zc in [ZIP,"4001"]:
-              try:
-                r=requests.get("https://api.marktguru.de/api/v1/offers/search",headers={"x-apikey":key,"accept":"application/json"},params={"as":"web","limit":15,"q":q,"zipCode":zc},timeout=10)
-                if r.status_code==200:
-                  results.extend(r.json().get("results",[]))
-              except Exception as e: print("err:"+str(e))
-            return results
+              results=[]
+              for zc in [ZIP,"4001"]:
+                try:
+                  r=requests.get("https://api.marktguru.de/api/v1/offers/search",headers={"x-apikey":key,"accept":"application/json"},params={"as":"web","limit":15,"q":q,"zipCode":zc},timeout=10)
+                  if r.status_code==200:
+                    data=r.json().get("results",[])
+                    if zc=="4001" and data:
+                      print("CH store: "+str(data[0].get("advertisers",[{}])[0].get("name","")))
+                    results.extend(data)
+                except Exception as e: print("err:"+str(e))
+              return results
           def fetch_migros():
               try:
                   token_resp=requests.post(
