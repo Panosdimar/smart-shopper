@@ -1,0 +1,146 @@
+name: Fetch CH Supermarket Offers
+
+on:
+  schedule:
+    - cron: '0 7 * * 4'
+  workflow_dispatch:
+
+jobs:
+  fetch-ch-offers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup and run
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          mkdir -p /tmp/chapp
+          cd /tmp/chapp
+          cat > package.json << 'EOF'
+          {"type":"module","dependencies":{"@supabase/supabase-js":"^2","node-fetch":"^3"}}
+          EOF
+          npm install --silent
+          cat > fetch_ch.mjs << 'ENDOFSCRIPT'
+import { createClient } from '@supabase/supabase-js';
+import fetch from 'node-fetch';
+
+const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const WEEK_END = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+
+async function getMigrosToken() {
+  try {
+    const r = await fetch('https://www.migros.ch/de', {
+      headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15' }
+    });
+    const cookies = r.headers.get('set-cookie') || '';
+    const match = cookies.match(/leshopch=([^;]+)/);
+    if (match) { console.log('Got Migros token'); return match[1]; }
+  } catch(e) { console.log('Token err:', e.message); }
+  return null;
+}
+
+async function fetchMigros(token) {
+  try {
+    const headers = { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json', 'Accept-Language': 'de-CH' };
+    if (token) headers['Cookie'] = 'leshopch=' + token;
+    const r = await fetch('https://www.migros.ch/product-display/public/web/v2/products/promotion/search?pageSize=100&currentPage=0', { headers });
+    console.log('Migros status:', r.status);
+    if (r.status === 200) {
+      const data = await r.json();
+      console.log('Migros keys:', Object.keys(data).join(','));
+      return data.products || data.results || [];
+    }
+  } catch(e) { console.log('Migros err:', e.message); }
+  return [];
+}
+
+async function fetchAldi() {
+  try {
+    const r = await fetch('https://www.aldi-now.ch/api/offers?pageSize=50&page=1', {
+      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json', 'Accept-Language': 'de-CH' }
+    });
+    console.log('Aldi status:', r.status);
+    if (r.status === 200) {
+      const data = await r.json();
+      console.log('Aldi keys:', Object.keys(data).join(','));
+      return data.offers || data.items || data.results || [];
+    }
+  } catch(e) { console.log('Aldi err:', e.message); }
+  return [];
+}
+
+async function fetchDenner() {
+  try {
+    const regResp = await fetch('https://www.denner.ch/api/v1/clients', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'Denner/6.0 (iPhone; iOS 17.0)' },
+      body: JSON.stringify({ platform: 'ios', version: '6.0' })
+    });
+    console.log('Denner reg:', regResp.status);
+    let token = '';
+    if (regResp.status === 201 || regResp.status === 200) {
+      const d = await regResp.json();
+      token = d.token || d.access_token || '';
+    }
+    const headers = { 'User-Agent': 'Denner/6.0', 'Accept': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const r = await fetch('https://www.denner.ch/api/v1/promotions?limit=50', { headers });
+    console.log('Denner status:', r.status);
+    if (r.status === 200) {
+      const data = await r.json();
+      return data.promotions || data.offers || data.results || [];
+    }
+  } catch(e) { console.log('Denner err:', e.message); }
+  return [];
+}
+
+function parse(item, storeName, storeId) {
+  const name = item.name || item.title || item.description || '';
+  const price = parseFloat(item.price?.current || item.price || item.promotionPrice || 0) || 0;
+  const oldPrice = parseFloat(item.price?.original || item.oldPrice || item.regularPrice || price) || price;
+  const imageUrl = item.imageUrl || item.image?.url || item.images?.[0]?.url || '';
+  const unit = String(item.unit || item.quantityUnit || 'pcs');
+  const validUntil = item.promotionEndDate?.split('T')[0] || WEEK_END;
+  const pid = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/, '').slice(0, 50);
+  if (!name || !price) return null;
+  return { store_id: storeId, store_name: storeName, store_flag: 'CH', product_id: pid, product_name: name, price, old_price: oldPrice, offer_id: String(item.id || ''), image_url: imageUrl, currency: 'CHF', unit, valid_until: validUntil, created_at: new Date().toISOString() };
+}
+
+async function save(rows, storeId) {
+  if (!rows.length) { console.log('No rows for', storeId); return; }
+  await sb.from('prices').delete().eq('store_id', storeId);
+  const { error } = await sb.from('prices').insert(rows);
+  if (error) console.log('Supabase err:', error.message);
+  else console.log('Saved', rows.length, storeId, 'offers!');
+}
+
+let total = 0;
+
+console.log('=== Migros CH ===');
+const token = await getMigrosToken();
+const migrosRaw = await fetchMigros(token);
+console.log('Raw Migros:', migrosRaw.length);
+const migrosRows = migrosRaw.map(p => parse(p, 'Migros', 'migros_ch')).filter(Boolean);
+await save(migrosRows, 'migros_ch');
+total += migrosRows.length;
+
+console.log('=== Aldi CH ===');
+const aldiRaw = await fetchAldi();
+const aldiRows = aldiRaw.map(p => parse(p, 'Aldi', 'aldi_ch')).filter(Boolean);
+await save(aldiRows, 'aldi_ch');
+total += aldiRows.length;
+
+console.log('=== Denner CH ===');
+const dennerRaw = await fetchDenner();
+const dennerRows = dennerRaw.map(p => parse(p, 'Denner', 'denner_ch')).filter(Boolean);
+await save(dennerRows, 'denner_ch');
+total += dennerRows.length;
+
+console.log('=== Total CH offers:', total, '===');
+          ENDOFSCRIPT
+          node fetch_ch.mjs
