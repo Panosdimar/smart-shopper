@@ -9,138 +9,112 @@ jobs:
   fetch-ch-offers:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          node-version: '20'
+          python-version: '3.11'
 
-      - name: Setup and run
+      - name: Install dependencies
+        run: pip install requests supabase
+
+      - name: Fetch CH offers
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          mkdir -p /tmp/chapp
-          cd /tmp/chapp
-          cat > package.json << 'EOF'
-          {"type":"module","dependencies":{"@supabase/supabase-js":"^2","node-fetch":"^3"}}
-          EOF
-          npm install --silent
-          cat > fetch_ch.mjs << 'ENDOFSCRIPT'
-import { createClient } from '@supabase/supabase-js';
-import fetch from 'node-fetch';
-
-const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-const WEEK_END = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
-
-async function getMigrosToken() {
-  try {
-    const r = await fetch('https://www.migros.ch/de', {
-      headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15' }
-    });
-    const cookies = r.headers.get('set-cookie') || '';
-    const match = cookies.match(/leshopch=([^;]+)/);
-    if (match) { console.log('Got Migros token'); return match[1]; }
-  } catch(e) { console.log('Token err:', e.message); }
-  return null;
-}
-
-async function fetchMigros(token) {
-  try {
-    const headers = { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json', 'Accept-Language': 'de-CH' };
-    if (token) headers['Cookie'] = 'leshopch=' + token;
-    const r = await fetch('https://www.migros.ch/product-display/public/web/v2/products/promotion/search?pageSize=100&currentPage=0', { headers });
-    console.log('Migros status:', r.status);
-    if (r.status === 200) {
-      const data = await r.json();
-      console.log('Migros keys:', Object.keys(data).join(','));
-      return data.products || data.results || [];
-    }
-  } catch(e) { console.log('Migros err:', e.message); }
-  return [];
-}
-
-async function fetchAldi() {
-  try {
-    const r = await fetch('https://www.aldi-now.ch/api/offers?pageSize=50&page=1', {
-      headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json', 'Accept-Language': 'de-CH' }
-    });
-    console.log('Aldi status:', r.status);
-    if (r.status === 200) {
-      const data = await r.json();
-      console.log('Aldi keys:', Object.keys(data).join(','));
-      return data.offers || data.items || data.results || [];
-    }
-  } catch(e) { console.log('Aldi err:', e.message); }
-  return [];
-}
-
-async function fetchDenner() {
-  try {
-    const regResp = await fetch('https://www.denner.ch/api/v1/clients', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'User-Agent': 'Denner/6.0 (iPhone; iOS 17.0)' },
-      body: JSON.stringify({ platform: 'ios', version: '6.0' })
-    });
-    console.log('Denner reg:', regResp.status);
-    let token = '';
-    if (regResp.status === 201 || regResp.status === 200) {
-      const d = await regResp.json();
-      token = d.token || d.access_token || '';
-    }
-    const headers = { 'User-Agent': 'Denner/6.0', 'Accept': 'application/json' };
-    if (token) headers['Authorization'] = 'Bearer ' + token;
-    const r = await fetch('https://www.denner.ch/api/v1/promotions?limit=50', { headers });
-    console.log('Denner status:', r.status);
-    if (r.status === 200) {
-      const data = await r.json();
-      return data.promotions || data.offers || data.results || [];
-    }
-  } catch(e) { console.log('Denner err:', e.message); }
-  return [];
-}
-
-function parse(item, storeName, storeId) {
-  const name = item.name || item.title || item.description || '';
-  const price = parseFloat(item.price?.current || item.price || item.promotionPrice || 0) || 0;
-  const oldPrice = parseFloat(item.price?.original || item.oldPrice || item.regularPrice || price) || price;
-  const imageUrl = item.imageUrl || item.image?.url || item.images?.[0]?.url || '';
-  const unit = String(item.unit || item.quantityUnit || 'pcs');
-  const validUntil = item.promotionEndDate?.split('T')[0] || WEEK_END;
-  const pid = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/, '').slice(0, 50);
-  if (!name || !price) return null;
-  return { store_id: storeId, store_name: storeName, store_flag: 'CH', product_id: pid, product_name: name, price, old_price: oldPrice, offer_id: String(item.id || ''), image_url: imageUrl, currency: 'CHF', unit, valid_until: validUntil, created_at: new Date().toISOString() };
-}
-
-async function save(rows, storeId) {
-  if (!rows.length) { console.log('No rows for', storeId); return; }
-  await sb.from('prices').delete().eq('store_id', storeId);
-  const { error } = await sb.from('prices').insert(rows);
-  if (error) console.log('Supabase err:', error.message);
-  else console.log('Saved', rows.length, storeId, 'offers!');
-}
-
-let total = 0;
-
-console.log('=== Migros CH ===');
-const token = await getMigrosToken();
-const migrosRaw = await fetchMigros(token);
-console.log('Raw Migros:', migrosRaw.length);
-const migrosRows = migrosRaw.map(p => parse(p, 'Migros', 'migros_ch')).filter(Boolean);
-await save(migrosRows, 'migros_ch');
-total += migrosRows.length;
-
-console.log('=== Aldi CH ===');
-const aldiRaw = await fetchAldi();
-const aldiRows = aldiRaw.map(p => parse(p, 'Aldi', 'aldi_ch')).filter(Boolean);
-await save(aldiRows, 'aldi_ch');
-total += aldiRows.length;
-
-console.log('=== Denner CH ===');
-const dennerRaw = await fetchDenner();
-const dennerRows = dennerRaw.map(p => parse(p, 'Denner', 'denner_ch')).filter(Boolean);
-await save(dennerRows, 'denner_ch');
-total += dennerRows.length;
-
-console.log('=== Total CH offers:', total, '===');
+          cat > /tmp/fetch_ch.py << 'ENDOFSCRIPT'
+          import os,re,json,requests
+          from supabase import create_client
+          from datetime import datetime,timedelta
+          sb=create_client(os.environ["SUPABASE_URL"],os.environ["SUPABASE_KEY"])
+          SB_URL=os.environ["SUPABASE_URL"]
+          SB_KEY=os.environ["SUPABASE_KEY"]
+          WEEK_END=(datetime.utcnow()+timedelta(days=7)).strftime("%Y-%m-%d")
+          def get_migros_token():
+            try:
+              r=requests.get("https://www.migros.ch/de",headers={"User-Agent":"Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)"},timeout=10,allow_redirects=True)
+              cookies=r.headers.get("set-cookie","")
+              m=re.search("leshopch=([^;]+)",cookies)
+              if m: print("Got Migros token"); return m.group(1)
+            except Exception as e: print("Token err:"+str(e))
+            return None
+          def fetch_migros(token):
+            try:
+              headers={"User-Agent":"Mozilla/5.0","Accept":"application/json","Accept-Language":"de-CH"}
+              if token: headers["Cookie"]="leshopch="+token
+              r=requests.get("https://www.migros.ch/product-display/public/web/v2/products/promotion/search",params={"pageSize":100,"currentPage":0},headers=headers,timeout=15)
+              print("Migros status:"+str(r.status_code))
+              if r.status_code==200:
+                data=r.json()
+                print("Migros keys:"+str(list(data.keys())))
+                return data.get("products",data.get("results",[]))
+            except Exception as e: print("Migros err:"+str(e))
+            return []
+          def fetch_aldi():
+            try:
+              r=requests.get("https://www.aldi-now.ch/api/offers",params={"pageSize":50,"page":1},headers={"User-Agent":"Mozilla/5.0","Accept":"application/json"},timeout=15)
+              print("Aldi status:"+str(r.status_code))
+              if r.status_code==200:
+                data=r.json()
+                print("Aldi keys:"+str(list(data.keys())))
+                return data.get("offers",data.get("items",data.get("results",[])))
+            except Exception as e: print("Aldi err:"+str(e))
+            return []
+          def fetch_denner():
+            try:
+              reg=requests.post("https://www.denner.ch/api/v1/clients",json={"platform":"ios","version":"6.0"},headers={"User-Agent":"Denner/6.0","Content-Type":"application/json"},timeout=10)
+              print("Denner reg:"+str(reg.status_code))
+              token=""
+              if reg.status_code in [200,201]:
+                d=reg.json()
+                token=d.get("token",d.get("access_token",""))
+              headers={"User-Agent":"Denner/6.0","Accept":"application/json"}
+              if token: headers["Authorization"]="Bearer "+token
+              r=requests.get("https://www.denner.ch/api/v1/promotions",params={"limit":50},headers=headers,timeout=15)
+              print("Denner status:"+str(r.status_code))
+              if r.status_code==200:
+                data=r.json()
+                return data.get("promotions",data.get("offers",data.get("results",[])))
+            except Exception as e: print("Denner err:"+str(e))
+            return []
+          def parse(item,store_name,store_id):
+            name=item.get("name",item.get("title",item.get("description","")))
+            price_obj=item.get("price",{})
+            if isinstance(price_obj,dict):
+              price=float(price_obj.get("current",price_obj.get("regular",0)) or 0)
+              old_price=float(price_obj.get("original",price) or price)
+            else:
+              price=float(price_obj or 0)
+              old_price=float(item.get("oldPrice",item.get("regularPrice",price)) or price)
+            if not name or not price: return None
+            image_url=item.get("imageUrl",item.get("image",{}).get("url","") if isinstance(item.get("image"),dict) else "")
+            unit=str(item.get("unit",item.get("quantityUnit","pcs")))
+            valid_until=item.get("promotionEndDate","")[:10] if item.get("promotionEndDate") else WEEK_END
+            pid=re.sub("[^a-z0-9]+","_",name.lower()).strip("_")[:50]
+            return {"store_id":store_id,"store_name":store_name,"store_flag":"CH","product_id":pid,"product_name":name,"price":price,"old_price":old_price,"offer_id":str(item.get("id","")),"image_url":image_url,"currency":"CHF","unit":unit,"valid_until":valid_until,"created_at":datetime.utcnow().isoformat()}
+          def save(rows,store_id):
+            if not rows: print("No rows for "+store_id); return 0
+            sb.table("prices").delete().eq("store_id",store_id).execute()
+            sb.table("prices").insert(rows).execute()
+            print("Saved "+str(len(rows))+" "+store_id+" offers!")
+            return len(rows)
+          total=0
+          print("=== Migros CH ===")
+          token=get_migros_token()
+          raw=fetch_migros(token)
+          print("Raw Migros:"+str(len(raw)))
+          rows=[x for x in [parse(p,"Migros","migros_ch") for p in raw] if x]
+          total+=save(rows,"migros_ch")
+          print("=== Aldi CH ===")
+          raw=fetch_aldi()
+          print("Raw Aldi:"+str(len(raw)))
+          rows=[x for x in [parse(p,"Aldi","aldi_ch") for p in raw] if x]
+          total+=save(rows,"aldi_ch")
+          print("=== Denner CH ===")
+          raw=fetch_denner()
+          print("Raw Denner:"+str(len(raw)))
+          rows=[x for x in [parse(p,"Denner","denner_ch") for p in raw] if x]
+          total+=save(rows,"denner_ch")
+          print("Total CH offers:"+str(total))
           ENDOFSCRIPT
-          node fetch_ch.mjs
+          python3 /tmp/fetch_ch.py
